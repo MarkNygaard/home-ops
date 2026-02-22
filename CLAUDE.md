@@ -103,6 +103,15 @@ User needs to add two files:
 
 Also update `.renovaterc.json5`: set timezone and add `ignorePaths: ["**/resources/**"]`.
 
+## Development environment
+
+The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** for all `task` commands — the template tooling was designed for Linux/macOS and go-task has path bugs on native Windows.
+
+- Repo path in WSL2: `/mnt/c/Users/Mark/Github/home-ops`
+- WSL2 setup (already done): `curl https://mise.run | sh`, add `eval "$(~/.local/bin/mise activate bash)"` to `~/.bashrc`, then `mise trust .mise.toml && mise install && uv tool install makejinja==2.8.2`
+- If running quick commands from PowerShell: use `mise exec -- <command>` (mise activation is broken in PowerShell)
+- pipx lines in `.mise.toml` are commented out (unsupported on Windows via aqua)
+
 ## Current deployment phase
 
 **Pre-server** — servers not yet arrived. Working through the "Do this now" section of DEPLOYMENT.md.
