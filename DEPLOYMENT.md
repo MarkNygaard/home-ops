@@ -6,18 +6,18 @@ Step-by-step guide to follow when the servers arrive. Work top to bottom — eac
 
 ### Do this now — no servers needed
 
-- [] Fork / create your repo from the cluster-template
+- [x] Fork / create your repo from the cluster-template
 - [x] Install mise and run `mise install` to get all tooling
-- [ ] **Collect secrets from your current Docker setup** — copy `secrets.env.sample` to `.private/secrets.env` and fill in all values from your existing Docker Compose configs (API keys, passwords, WireGuard keys, etc.). `.private/` is gitignored. Having everything in one place before you start avoids hunting through old configs mid-setup.
-- [ ] Install the Renovate GitHub App on your repo
-- [ ] Extend Renovate config: create `.renovate/autoMerge.json5` and `.renovate/groups.json5` (see Renovate section in SETUP.md). Also update `.renovaterc.json5`: set timezone to `Europe/Copenhagen` and add `ignorePaths: ["**/resources/**"]` to prevent Renovate scanning Gatus config files.
-- [ ] Create a Cloudflare R2 bucket (`cluster-volsync`) and generate an API token for it
-- [ ] Create a Cloudflare Tunnel in the Cloudflare dashboard and download the credentials file as `cloudflare-tunnel.json` into the repo root — this is required before `task template:configure`
-- [ ] Run `task template:init` — this renames the `.sample` config files, generates your `age.key` (SOPS encryption), and generates a `github-deploy.key` (SSH key pair for Flux)
-- [ ] Fill in `cluster.yaml` with your domain, Cloudflare token, gateway IPs, and repo name
-- [ ] Generate a schematic at factory.talos.dev with: `intel-ucode`, `i915`, `mei`, `thunderbolt`, `thunderbolt_net`, `tun` — note the schematic ID
-- [ ] Add the deploy key to GitHub: open `github-deploy.key.pub`, paste it into your repo → Settings → Deploy keys → Add deploy key (read-only is enough). This is how Flux authenticates to read your repo.
-- [ ] Download the Talos ISO from factory.talos.dev (keep it ready for JetKVM)
+- [x] **Collect secrets from your current Docker setup** — copy `secrets.env.sample` to `.private/secrets.env` and fill in all values from your existing Docker Compose configs (API keys, passwords, WireGuard keys, etc.). `.private/` is gitignored. Having everything in one place before you start avoids hunting through old configs mid-setup.
+- [x] Install the Renovate GitHub App on your repo
+- [x] Extend Renovate config: create `.renovate/autoMerge.json5` and `.renovate/groups.json5` (see Renovate section in SETUP.md). Also update `.renovaterc.json5`: set timezone to `Europe/Copenhagen` and add `ignorePaths: ["**/resources/**"]` to prevent Renovate scanning Gatus config files.
+- [x] Create a Cloudflare R2 bucket (`cluster-volsync`) and generate an API token for it
+- [x] Create a Cloudflare Tunnel in the Cloudflare dashboard and download the credentials file as `cloudflare-tunnel.json` into the repo root — this is required before `task template:configure`
+- [x] Run `task template:init` — this renames the `.sample` config files, generates your `age.key` (SOPS encryption), and generates a `github-deploy.key` (SSH key pair for Flux)
+- [x] Fill in `cluster.yaml` with your domain, Cloudflare token, gateway IPs, and repo name
+- [x] Generate a schematic at factory.talos.dev with: `siderolabs/intel-ucode`, `siderolabs/i915`, `siderolabs/mei`, `siderolabs/thunderbolt` — note the schematic ID
+- [x] Add the deploy key to GitHub: open `github-deploy.key.pub`, paste it into your repo → Settings → Deploy keys → Add deploy key (read-only is enough). This is how Flux authenticates to read your repo.
+- [x] Download the Talos ISO from factory.talos.dev (keep it ready for JetKVM)
 
 ---
 
