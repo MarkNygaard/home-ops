@@ -83,7 +83,7 @@ Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addre
 | DEFAULT | SERVERS | Block | |
 | DEFAULT | TRUSTED | Block | |
 
-> **UniFi controller inform:** UniFi devices call home to the controller on port 8080. The controller runs on the cluster (SERVERS VLAN) in Phase 1–2. Add a specific rule: `any → SERVERS:8080 allow` so APs and switches on other VLANs can reach it. This rule can be removed in Phase 3 when the controller moves to the UDM Pro Max.
+> **UniFi controller inform:** The UDM Pro runs the controller natively — no extra firewall rule needed for device inform. UniFi devices reach the controller directly on the gateway IP.
 
 > **Home Assistant mDNS discovery:** IoT devices announce themselves via mDNS (multicast) which doesn't cross VLANs by default. Enable mDNS reflection on the IOT network in UniFi (Settings → Networks → IOT → enable mDNS) so Home Assistant can discover devices as if they were on the same network.
 

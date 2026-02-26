@@ -222,7 +222,7 @@ Note the **schematic ID** — it goes in each node's `schematic_id` field.
 
 **Additional Phase 3 changes:**
 - Deploy **KEDA** (Kubernetes Event-driven Autoscaling) in `kube-system` — enables the `nfs-scaler` component to automatically scale media apps to zero replicas when the NAS goes offline, preventing crash loops
-- Remove **UniFi Network Application** from the cluster if not already done — the UDM Pro's built-in controller replaces it
+- *(UniFi Network Application was never deployed — the UDM Pro runs the controller natively)*
 
 > **TrueNAS note:** TrueNAS SCALE is recommended over CORE for this setup — it has a smoother `democratic-csi` integration and is Linux-based.
 
@@ -272,27 +272,27 @@ Homepage annotations are added directly to each app's service (e.g. Radarr, Jell
 |-----|---------|-------|
 | **Envoy Gateway** | Ingress / HTTP routing | Already included in the template — do not add Traefik alongside it, they conflict |
 | **AdGuard Home** | Network-wide ad blocking & DNS | Run as a DaemonSet (one pod per node) so DNS stays up if any single node goes down |
-| **UniFi Network Application** | UniFi controller (switches, APs, gateway) | Requires MongoDB and a LoadBalancer IP for device inform on port 8080. Run in the cluster for now — migrate to TrueNAS SCALE in Phase 3 for better isolation |
 | **unifi-dns** | Automatic LAN DNS from Kubernetes | ExternalDNS webhook ([`external-dns-unifi-webhook`](https://github.com/kashalls/external-dns-unifi-webhook)) — watches `HTTPRoute` resources and writes matching DNS records to your UniFi gateway automatically |
 
-> **UniFi reliability warning:** UniFi devices cache their config and keep routing/switching without the controller — but if the cluster goes down you temporarily lose the ability to make network changes. Migrating the controller to TrueNAS (Phase 3) eliminates this dependency.
->
-> **Long-term plan:** TrueNAS SCALE can run the UniFi Network Application as a container, completely independent of the Kubernetes cluster. Move it there in Phase 3.
+> **UniFi controller:** The UDM Pro runs the UniFi Network Application natively — no need to deploy it in the cluster or maintain a separate MongoDB instance.
 
 ### Observability
 
 | App | Purpose | Notes |
 |-----|---------|-------|
 | **kube-prometheus-stack** | Prometheus + Grafana + Alertmanager | The standard Helm chart — installs all three together |
-| **Loki** | Log aggregation | Pairs with Grafana for log querying |
+| **Alloy** | Log & metric collection | DaemonSet — tails container logs on every node and ships them to Loki. The officially recommended replacement for Promtail. |
+| **Loki** | Log aggregation | Receives logs from Alloy; pairs with Grafana for log querying |
 | **Gatus** | Uptime / status page | Monitors HTTP, TCP, and DNS endpoints — exposes a public status page |
 | **Ntfy** | Push notifications | Self-hosted notification server — sends alerts to iOS/Android via the Ntfy app |
 | **smartctl-exporter** | NVMe drive health | Exports SMART data (health, temperature, wear) from all drives to Prometheus — visible in Grafana |
-| **Unifi Poller** | UniFi metrics exporter | Scrapes the UniFi controller API and exposes Prometheus metrics — client counts, traffic, AP stats, switch ports. Community Grafana dashboards available. |
+| **Unifi Poller** | UniFi metrics exporter | Scrapes the UDM Pro API and exposes Prometheus metrics — client counts, traffic, AP stats, switch ports. Community Grafana dashboards available. |
+
+**Log pipeline:** Alloy (DaemonSet) tails container logs on every node → ships to Loki via its HTTP push API → Grafana queries Loki. No PVC or secrets needed — Alloy only needs the Loki endpoint URL in its config.
 
 **Home Assistant → Grafana:** enable the [Prometheus integration](https://www.home-assistant.io/integrations/prometheus/) in HA, then add a Prometheus scrape job pointing at your HA instance. All HA sensor data flows into Grafana automatically.
 
-**UniFi → Grafana:** Unifi Poller scrapes the UniFi controller on a schedule → Prometheus scrapes Unifi Poller → Grafana displays network metrics. Import community dashboard ID `11315` for a ready-made UniFi overview.
+**UniFi → Grafana:** Unifi Poller scrapes the UDM Pro on a schedule → Prometheus scrapes Unifi Poller → Grafana displays network metrics. Import community dashboard ID `11315` for a ready-made UniFi overview.
 
 **Gatus — auto-discovery via sidecar:** The clever part of onedr0p's setup is the [`gatus-sidecar`](https://github.com/home-operations/gatus-sidecar) — a native Kubernetes sidecar container (initContainer with `restartPolicy: Always`) that watches the cluster for `HTTPRoute` resources and automatically generates Gatus endpoint configs from them. This means you annotate your apps, not Gatus:
 
@@ -538,10 +538,6 @@ kubernetes/
     ├── network/                         # already exists in template
     │   ├── adguard-home/
     │   │   └── app/ helmrelease, httproute
-    │   ├── unifi/
-    │   │   └── app/ helmrelease, httproute, service-lb.yaml (LoadBalancer port 8080 for device inform), secret.sops
-    │   ├── unifi-mongodb/
-    │   │   └── app/ helmrelease, pvc                        (MongoDB for UniFi — separate from CloudNativePG)
     │   ├── unifi-dns/
     │   │   └── app/ helmrelease, secret.sops                (external-dns-unifi-webhook — auto DNS from HTTPRoutes)
     │   └── ... (cloudflare-tunnel, envoy-gateway, etc.)
@@ -551,6 +547,8 @@ kubernetes/
     │   ├── kustomization.yaml
     │   ├── kube-prometheus-stack/
     │   │   └── app/ helmrelease, ocirepository
+    │   ├── alloy/
+    │   │   └── app/ helmrelease           (DaemonSet — collects pod logs, ships to Loki)
     │   ├── loki/
     │   │   └── app/ helmrelease, ocirepository
     │   ├── gatus/
@@ -571,7 +569,7 @@ kubernetes/
     │   ├── keda/
     │   │   └── app/ helmrelease           (Phase 3: enables nfs-scaler component)
     │   └── unifi-poller/
-    │       └── app/ helmrelease, secret.sops                (UniFi controller credentials)
+    │       └── app/ helmrelease, secret.sops                (UDM Pro credentials)
     │
     ├── database/
     │   ├── namespace.yaml

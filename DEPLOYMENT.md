@@ -55,7 +55,7 @@ Deploy these before anything else — other apps depend on them.
 The template already deploys Envoy Gateway, cert-manager, external-dns, and cloudflared. Add the apps that aren't in the template:
 
 - [ ] `network/adguard-home` — deploy and point your router's DNS at the cluster IP
-- [ ] `network/unifi` + `network/unifi-mongodb` + `network/unifi-dns` — UniFi controller + auto DNS
+- [ ] `network/unifi-dns` — auto DNS via external-dns-unifi-webhook (controller runs on UDM Pro)
 - [ ] Verify HTTPRoutes resolve correctly via AdGuard and Cloudflare Tunnel
 
 ---
@@ -82,6 +82,7 @@ Must be running before any app that needs PostgreSQL.
 
 - [ ] `monitoring/kube-prometheus-stack` — Prometheus + Grafana + Alertmanager
 - [ ] `monitoring/loki` — log aggregation
+- [ ] `monitoring/alloy` — deploy after Loki; collects pod logs on every node and ships to Loki
 - [ ] `monitoring/ntfy` — deploy first so Gatus and Alertmanager have somewhere to send alerts
 - [ ] `monitoring/gatus` — deploy; annotate HTTPRoutes with `gatus.home-operations.com/enabled: "true"` as you add apps
 - [ ] `monitoring/smartctl-exporter` — NVMe SMART metrics
