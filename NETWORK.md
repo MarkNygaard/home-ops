@@ -42,50 +42,59 @@ VLAN IDs match the third octet for easy cross-referencing.
 | IP | Purpose |
 |----|---------|
 | 192.168.42.1 | Gateway (UDM Pro) |
-| 192.168.42.10 | `cluster_api_addr` — Kubernetes API server |
-| 192.168.42.11 | `cluster_dns_gateway_addr` — k8s-gateway (internal DNS) |
+| 192.168.42.10 | **Temporary:** Mac Mini (Proxmox) — becomes `cluster_api_addr` (Kubernetes API server) when MS-01s arrive |
+| 192.168.42.11 | **Temporary:** Home Assistant VM — becomes `cluster_dns_gateway_addr` (k8s-gateway) when MS-01s arrive |
 | 192.168.42.12 | `cluster_gateway_addr` — internal Envoy Gateway |
 | 192.168.42.13 | `cloudflare_gateway_addr` — external Envoy Gateway (Cloudflare Tunnel) |
 | 192.168.42.100 | MS-01 node 1 |
 | 192.168.42.101 | MS-01 node 2 |
 | 192.168.42.102 | MS-01 node 3 |
 | 192.168.42.200 | TrueNAS (Phase 3) |
-| 192.168.42.201 | Mac Mini (Home Assistant) |
+| 192.168.42.201 | Mac Mini (HAOS) — after MS-01 arrival, reinstall Proxmox → HAOS directly |
 
 These are the values that go into `cluster.yaml` and `nodes.yaml`. Keep `.2`–`.9` and `.14`–`.99` free for future cluster LoadBalancer IPs.
 
 Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addresses in the reserved ranges above.
 
-> **Mac Mini note:** currently running Proxmox with a HAOS VM and a Docker VM — will be migrated to HAOS directly in the future. Keep the same IP (`192.168.42.201`) through the migration so nothing that talks to Home Assistant needs reconfiguring.
+> **Mac Mini note:** currently running Proxmox (`.10`) with a HAOS VM (`.11`) and a Docker VM. When MS-01s arrive: reinstall Mac Mini with HAOS directly at `.201`, update firewall rules to reference `.201`, and free `.10`/`.11` for cluster services.
 
 ---
 
 ## Firewall rules
 
-| Source | Destination | Action | Notes |
-|--------|-------------|--------|-------|
-| TRUSTED | SERVERS | Allow | Management access to cluster and services |
-| TRUSTED | IOT | Allow | Control smart home devices from trusted devices |
-| TRUSTED | DEFAULT | Allow | Reach legacy devices |
-| TRUSTED | internet | Allow | |
-| SERVERS | internet | Allow | Pull container images, Cloudflare Tunnel, external APIs |
-| SERVERS | IOT | Allow | Home Assistant (192.168.42.201) needs to reach IoT devices to send commands and poll state |
-| SERVERS | TRUSTED | Block | Servers don't initiate to client devices |
-| IOT | SERVERS:1883 | Allow | MQTT — IoT devices publish to broker on SERVERS (Zigbee2MQTT etc.) |
-| IOT | internet | Allow | Smart home cloud connectivity |
-| IOT | SERVERS | Block | Default block — must come after the specific MQTT allow above |
-| IOT | TRUSTED | Block | |
-| GUEST | internet | Allow | |
-| GUEST | SERVERS | Block | |
-| GUEST | TRUSTED | Block | |
-| GUEST | IOT | Block | |
-| DEFAULT | internet | Allow | During transition — tighten later |
-| DEFAULT | SERVERS | Block | |
-| DEFAULT | TRUSTED | Block | |
+Using the **Zone-Based Firewall** (upgraded from the legacy rule-based model). All VLANs are in the **Internal** zone. The default Internal → Internal posture is **Allow All**, so explicit allow rules are needed above corresponding block rules. Rules with "Return Traffic" use the **Connection State: Return Traffic** setting in UniFi.
 
-> **UniFi controller inform:** The UDM Pro runs the controller natively — no extra firewall rule needed for device inform. UniFi devices reach the controller directly on the gateway IP.
+**Custom policies (Internal → Internal):**
 
-> **Home Assistant mDNS discovery:** IoT devices announce themselves via mDNS (multicast) which doesn't cross VLANs by default. Enable mDNS reflection on the IOT network in UniFi (Settings → Networks → IOT → enable mDNS) so Home Assistant can discover devices as if they were on the same network.
+| # | Name | Action | Source | Destination | Notes |
+|---|------|--------|--------|-------------|-------|
+| 1 | Servers → IoT (HA) | Allow | 192.168.42.11 | IoT | HA needs to reach IoT devices (e.g. WLED, sensors) |
+| 2 | IoT → Servers MQTT | Allow | IoT | 192.168.42.11, TCP 1883 | MQTT broker scoped to HA IP |
+| 3 | IoT → Servers (HA Return) | Allow | IoT | 192.168.42.11 | Connection State: Return Traffic — IoT replies to HA |
+| 4 | IoT → Trusted (Return Traffic) | Allow | IoT | Trusted | Connection State: Return Traffic — IoT replies when controlled directly from Trusted devices |
+| 5 | IoT → Servers | Block | IoT | Servers | |
+| 6 | IoT → Trusted | Block | IoT | Trusted | |
+| 7 | Trusted → Servers | Allow | Trusted | Servers | Management access to cluster, Proxmox, services |
+| 8 | Servers → Trusted (Return Traffic) | Allow | Servers | Trusted | Connection State: Return Traffic — servers respond to trusted-initiated connections |
+| 9 | Servers → Trusted | Block | Servers | Trusted | Servers don't initiate to client devices |
+| 10 | Guest → Servers | Block | Guest | Servers | |
+| 11 | Guest → Trusted | Block | Guest | Trusted | |
+| 12 | Guest → IoT | Block | Guest | IoT | |
+| 13 | Default → Trusted (Return Traffic) | Allow | Default | Trusted | Connection State: Return Traffic — Default replies when accessed from Trusted devices |
+| 14 | Default → Servers | Block | Default | Servers | |
+| 15 | Default → Trusted | Block | Default | Trusted | |
+
+**Implicitly allowed by the default Allow All posture** (no rules needed):
+
+| Traffic | Why |
+|---------|-----|
+| TRUSTED → IOT | Control smart home devices from trusted devices (return traffic handled by rule 4) |
+| TRUSTED → DEFAULT | Reach legacy devices (return traffic handled by rule 13) |
+| All VLANs → internet | Internal → External defaults to Allow All |
+
+> **Why explicit allow + return traffic rules?** The zone-based firewall's default Allow All posture doesn't reliably handle return traffic when a block rule exists below. For example, Trusted → Servers worked implicitly, but Proxmox couldn't respond back through the Servers → Trusted block. Adding explicit allow rules with Connection State: Return Traffic above the blocks fixed this.
+
+> **Home Assistant mDNS discovery:** mDNS proxy is enabled on SERVERS and IOT VLANs (Gateway mDNS Proxy → Custom scope). IoT devices announce via mDNS and Home Assistant discovers them across VLANs.
 
 ---
 
@@ -93,9 +102,9 @@ Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addre
 
 | SSID | VLAN | Notes |
 |------|------|-------|
-| MM | TRUSTED | Personal devices |
-| MM-IoT | IOT | Smart home devices — hidden SSID, separate SSID keeps them isolated |
-| MM-Guest | GUEST | Guest access — visible SSID |
+| MM | TRUSTED | Personal devices — WPA2/WPA3 |
+| MM-IoT | IOT | Smart home devices — WPA2/WPA3, hidden SSID |
+| MM-Guest | GUEST | Guest access — WPA2, visible SSID, client device isolation enabled |
 
 No wireless network for SERVERS — nodes and NAS are wired only.
 
@@ -131,24 +140,21 @@ When the USW-Pro-HD-24-PoE arrives (new house), swap out the US-8-60W and move n
 
 The UDM Pro doesn't have the USG-3P's overriding "allow all LAN" default rules, so port-specific rules work. Revisit the firewall:
 
-8. **Add port-specific rules** — replace the broad `Allow IOT to SERVERS` rule with specific ports:
-   - IOT → SERVERS:1883 (MQTT)
-   - IOT → SERVERS:8123 (Home Assistant, if needed)
-9. **Add DEFAULT block rules** — if all devices are off the DEFAULT VLAN by now:
-   - Block DEFAULT → SERVERS
-   - Block DEFAULT → TRUSTED
+8. ~~**Add port-specific rules** — IoT ↔ Servers rules already scoped to HA IP (192.168.42.11) with MQTT on TCP 1883~~
+9. ~~**Add DEFAULT block rules** — Default → Servers and Default → Trusted blocks already in place~~
 
 ---
 
 ## UniFi setup steps
 
-~~Do this before the servers arrive~~ — **completed.**
+**Completed** — UDM Pro set up from scratch (no USG-3P backup restore).
 
 1. ~~Log into UniFi Network controller~~
 2. ~~**Create VLANs:** Settings → Networks → Add Network for each VLAN above (set VLAN ID, subnet, enable DHCP)~~
 3. ~~**Create WiFi networks:** Settings → WiFi → Add WiFi for MM/MM-IoT/MM-Guest, assign each to its VLAN~~
 4. ~~**Set port profiles:** Devices → switch → Port Manager — assign profiles per the table above~~
-5. ~~**Add firewall rules:** Settings → Firewall & Security → add rules per the table above~~
-6. **Move devices:** reassign each device to its VLAN — _in progress_ (personal devices → TRUSTED, IoT devices → MM-IoT, Mac Mini → SERVERS)
-7. **Reserve SERVERS IPs:** in the SERVERS DHCP scope, add static reservations for the cluster IPs listed above so they never get handed out to other devices
-8. **Tighten DEFAULT rules:** after all devices are off the DEFAULT VLAN, add Block DEFAULT→SERVERS and Block DEFAULT→TRUSTED rules
+5. ~~**Upgrade to Zone-Based Firewall** and add policies per the firewall rules table above~~
+6. ~~**Configure mDNS:** Gateway mDNS Proxy → Custom, scope: Servers + IoT~~
+7. ~~**Move devices:** personal devices → MM, IoT devices (Echo, WLED, Sonos) → MM-IoT, Mac Mini → SERVERS~~
+8. ~~**Add DEFAULT block rules:** Default → Servers block, Default → Trusted block~~
+9. **Reserve SERVERS IPs:** in the SERVERS DHCP scope, add static reservations for the cluster IPs listed above so they never get handed out to other devices
