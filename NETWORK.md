@@ -112,7 +112,7 @@ Using the **Zone-Based Firewall** with **custom zones**. Each VLAN is assigned t
 
 > **Why per-pair return traffic rules?** The UDM Pro's "Auto Allow Return Traffic" checkbox on allow rules does not work reliably. Explicit return traffic rules (Connection State: Return Traffic) are required for each zone pair that has an allow rule. Without them, responses to allowed connections get dropped by the inter-zone Block All default.
 
-> **Home Assistant mDNS discovery:** mDNS proxy is enabled on SERVERS and IOT VLANs (Gateway mDNS Proxy → Custom scope). IoT devices announce via mDNS and Home Assistant discovers them across VLANs.
+> **mDNS discovery:** mDNS proxy is enabled on TRUSTED, SERVERS, and IOT VLANs (per-network mDNS checkbox). IoT devices announce via mDNS; Home Assistant and Trusted devices discover them via `.local` names across VLANs. The proxy only rebroadcasts service announcements — it does not bypass firewall rules.
 
 ---
 
@@ -172,7 +172,7 @@ The UDM Pro doesn't have the USG-3P's overriding "allow all LAN" default rules, 
 3. ~~**Create WiFi networks:** Settings → WiFi → Add WiFi for MM/MM-IoT/MM-Guest, assign each to its VLAN~~
 4. ~~**Set port profiles:** Devices → switch → Port Manager — assign profiles per the table above~~
 5. ~~**Upgrade to Zone-Based Firewall** and add policies per the firewall rules table above~~
-6. ~~**Configure mDNS:** Gateway mDNS Proxy → Custom, scope: Servers + IoT~~
+6. ~~**Configure mDNS:** Enable mDNS checkbox on Trusted, Servers, and IoT networks~~
 7. ~~**Move devices:** personal devices → MM, IoT devices (Echo, WLED, Sonos) → MM-IoT, Mac Mini → SERVERS~~
 8. ~~**Add DEFAULT block rules:** Default → Servers block, Default → Trusted block~~
 9. **Reserve SERVERS IPs:** in the SERVERS DHCP scope, add static reservations for the cluster IPs listed above so they never get handed out to other devices
