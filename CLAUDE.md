@@ -93,7 +93,7 @@ Full network design is in [NETWORK.md](NETWORK.md). Key facts:
 - Cluster nodes on SERVERS VLAN; `node_cidr: 192.168.42.0/24` in cluster.yaml
 - Reserved cluster IPs: .10 (API), .11 (DNS gateway), .12 (internal Envoy), .13 (external Envoy), .100–.102 (nodes)
 - UDM Pro already in place (replaced USG-3P in Phase 1); Phase 3 adds USW-Pro-HD-24-PoE (replaces US-8-60W)
-- **UDM Pro firewall gotcha:** the zone-based firewall's "auto allow return traffic" on allow rules does not work. Return traffic rules must be created manually as separate rules with Connection State: Return Traffic, placed above corresponding block rules. See [NETWORK.md](NETWORK.md) firewall section for the full ruleset.
+- **UDM Pro firewall:** uses custom zones (Trusted, Servers, IoT, Untrusted) with Block All default between zones — only allow rules needed, no block rules. The "Auto Allow Return Traffic" checkbox on allow rules does not work; explicit per-pair return traffic rules (Connection State: Return Traffic) are required. See [NETWORK.md](NETWORK.md) firewall section for the full ruleset.
 
 ## Renovate
 

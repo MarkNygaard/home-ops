@@ -62,37 +62,55 @@ Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addre
 
 ## Firewall rules
 
-Using the **Zone-Based Firewall** (upgraded from the legacy rule-based model). All VLANs are in the **Internal** zone. The default Internal → Internal posture is **Allow All**, so explicit allow rules are needed above corresponding block rules. Rules with "Return Traffic" use the **Connection State: Return Traffic** setting in UniFi.
+Using the **Zone-Based Firewall** with **custom zones**. Each VLAN is assigned to its own zone (or shares one with a similar trust level). The default posture between custom zones is **Block All**, so only explicit allow rules are needed — no block rules required.
 
-**Custom policies (Internal → Internal):**
+### Zones
 
-| # | Name | Action | Source | Destination | Notes |
-|---|------|--------|--------|-------------|-------|
-| 1 | Servers → IoT (HA) | Allow | 192.168.42.11 | IoT | HA needs to reach IoT devices (e.g. WLED, sensors) |
-| 2 | IoT → Servers MQTT | Allow | IoT | 192.168.42.11, TCP 1883 | MQTT broker scoped to HA IP |
-| 3 | IoT → Servers (HA Return) | Allow | IoT | 192.168.42.11 | Connection State: Return Traffic — IoT replies to HA |
-| 4 | IoT → Trusted (Return Traffic) | Allow | IoT | Trusted | Connection State: Return Traffic — IoT replies when controlled directly from Trusted devices |
-| 5 | IoT → Servers | Block | IoT | Servers | |
-| 6 | IoT → Trusted | Block | IoT | Trusted | |
-| 7 | Trusted → Servers | Allow | Trusted | Servers | Management access to cluster, Proxmox, services |
-| 8 | Servers → Trusted (Return Traffic) | Allow | Servers | Trusted | Connection State: Return Traffic — servers respond to trusted-initiated connections |
-| 9 | Servers → Trusted | Block | Servers | Trusted | Servers don't initiate to client devices |
-| 10 | Guest → Servers | Block | Guest | Servers | |
-| 11 | Guest → Trusted | Block | Guest | Trusted | |
-| 12 | Guest → IoT | Block | Guest | IoT | |
-| 13 | Default → Trusted (Return Traffic) | Allow | Default | Trusted | Connection State: Return Traffic — Default replies when accessed from Trusted devices |
-| 14 | Default → Servers | Block | Default | Servers | |
-| 15 | Default → Trusted | Block | Default | Trusted | |
+| Zone | VLAN(s) | Purpose |
+|------|---------|---------|
+| Trusted | TRUSTED | Personal devices, full management access |
+| Servers | SERVERS | Kubernetes nodes, NAS, Home Assistant |
+| IoT | IOT | Smart home devices — isolated, pin-hole access only |
+| Untrusted | GUEST, DEFAULT | Low-trust devices — internet only, no cross-VLAN access |
 
-**Implicitly allowed by the default Allow All posture** (no rules needed):
+### Custom policies
 
-| Traffic | Why |
-|---------|-----|
-| TRUSTED → IOT | Control smart home devices from trusted devices (return traffic handled by rule 4) |
-| TRUSTED → DEFAULT | Reach legacy devices (return traffic handled by rule 13) |
-| All VLANs → internet | Internal → External defaults to Allow All |
+**Allow rules:**
 
-> **Why explicit allow + return traffic rules?** The zone-based firewall's default Allow All posture doesn't reliably handle return traffic when a block rule exists below. For example, Trusted → Servers worked implicitly, but Proxmox couldn't respond back through the Servers → Trusted block. Adding explicit allow rules with Connection State: Return Traffic above the blocks fixed this.
+| # | Name | Source Zone | Source | Dest Zone | Dest | Notes |
+|---|------|------------|--------|-----------|------|-------|
+| 1 | Trusted → Servers | Trusted | Any | Servers | Any | Management access to cluster, Proxmox, services |
+| 2 | Trusted → IoT | Trusted | Any | IoT | Any | Control smart home devices from personal devices |
+| 3 | Trusted → Untrusted | Trusted | Any | Untrusted | Any | Reach legacy/guest devices |
+| 4 | Servers → IoT (HA) | Servers | 192.168.42.11 | IoT | Any | HA only — controls WLED, sensors, etc. |
+| 5 | IoT → Servers MQTT | IoT | Any | Servers | 192.168.42.11, TCP 1883 | MQTT broker scoped to HA IP |
+| 6 | IoT → Servers DNS | IoT | Any | Servers | 192.168.42.12, TCP/UDP 53 | IoT devices resolve via cluster DNS gateway |
+| 7 | IoT → Servers (LG TV) | IoT | 192.168.69.10 | Servers | 192.168.42.12, TCP 443 | LG TV needs HTTPS access to internal Envoy Gateway |
+
+**Return traffic rules** (Connection State: Return Traffic):
+
+| # | Name | Source Zone | Dest Zone | Covers return for |
+|---|------|------------|-----------|-------------------|
+| 8 | Servers → Trusted (Return) | Servers | Trusted | Rule 1 |
+| 9 | IoT → Trusted (Return) | IoT | Trusted | Rule 2 |
+| 10 | Untrusted → Trusted (Return) | Untrusted | Trusted | Rule 3 |
+| 11 | IoT → Servers (Return) | IoT | Servers | Rule 4 |
+| 12 | Servers → IoT (Return) | Servers | IoT | Rules 5, 6, 7 |
+
+**Blocked by default** (no rules needed — inter-zone default is Block All):
+
+| Traffic | Why blocked |
+|---------|-------------|
+| IoT → Trusted | IoT devices can't initiate to personal devices |
+| IoT → Untrusted | No reason for IoT to reach guest/default devices |
+| Servers → Trusted | Servers don't initiate to client devices |
+| Servers → Untrusted | Servers don't need guest/default access |
+| Untrusted → Servers | Guest/default devices can't reach cluster |
+| Untrusted → Trusted | Guest/default devices can't reach personal devices |
+| Untrusted → IoT | Guest/default devices can't reach smart home |
+| Guest ↔ Default | Isolated from each other within the Untrusted zone (inter-zone block) |
+
+> **Why per-pair return traffic rules?** The UDM Pro's "Auto Allow Return Traffic" checkbox on allow rules does not work reliably. Explicit return traffic rules (Connection State: Return Traffic) are required for each zone pair that has an allow rule. Without them, responses to allowed connections get dropped by the inter-zone Block All default.
 
 > **Home Assistant mDNS discovery:** mDNS proxy is enabled on SERVERS and IOT VLANs (Gateway mDNS Proxy → Custom scope). IoT devices announce via mDNS and Home Assistant discovers them across VLANs.
 
