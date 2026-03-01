@@ -351,6 +351,26 @@ Ntfy is a pub/sub push notification server. Apps send an HTTP POST to a topic UR
 
 **Access:** Expose via HTTPRoute for the web UI — useful for reading alerts in a browser. Protect with Authentik forward auth to avoid exposing your notification topics publicly.
 
+**Flux → Grafana annotations:** Flux can post annotations to Grafana whenever a HelmRelease or Kustomization is applied. This creates vertical markers on dashboards at the exact moment each deployment happened — invaluable for correlating metric changes with deployments. Requires two resources in `flux-system`:
+
+1. A `Provider` (type `grafana`) pointing at Grafana's annotation API with a service account token
+2. An `Alert` that watches all `HelmRelease` and `Kustomization` events and forwards them to the provider
+
+This is separate from the `alerts` component (which sends *failures* to Alertmanager → Ntfy). Grafana annotations capture *all deployments* as timeline markers.
+
+**Grafana MCP server:** The official [`grafana/mcp-grafana`](https://github.com/grafana/mcp-grafana) MCP server gives Claude Code read access to Grafana for AI-assisted debugging. Configure it locally (not deployed in the cluster) pointing at `grafana.mnygaard.io` with a Grafana service account token.
+
+| Capability | Useful for this setup |
+|------------|----------------------|
+| Loki (LogQL) | Query pod logs directly from Claude Code |
+| Prometheus (PromQL) | Check metrics, resource usage, alert status |
+| Dashboards | Inspect and search existing dashboards |
+| Annotations | Read deployment markers (from Flux annotations above) |
+| Tempo (traces) | Future — add when tracing is set up |
+| OnCall | Not needed — solo operator |
+
+Run with `--disable-write` for read-only mode. Requires exempting the Grafana API from Authentik forward auth (scoped to the service account token), or using the internal cluster URL.
+
 ### Databases
 
 | App | Purpose | Notes |
@@ -574,6 +594,10 @@ kubernetes/
     │   │   └── app/ helmrelease           (Phase 3: enables nfs-scaler component)
     │   └── unifi-poller/
     │       └── app/ helmrelease, secret.sops                (UDM Pro credentials)
+    │
+    │   # In flux-system (already exists in template):
+    │   # Add grafana-annotations provider.yaml + alert.yaml
+    │   # → posts deployment events as Grafana annotations
     │
     ├── database/
     │   ├── namespace.yaml
