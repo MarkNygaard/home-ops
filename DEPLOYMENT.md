@@ -36,6 +36,8 @@ Servers are in hand from here.
 - [ ] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
 - [ ] Run `task bootstrap:apps` to deploy Flux and all base applications
 - [ ] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
+- [ ] Deploy the Flux Operator (`flux-operator` HelmRelease + `FluxInstance` CRD) — once running, the operator manages the Flux lifecycle and the CLI-bootstrapped Flux can be removed (see SETUP.md for details)
+- [ ] Set up `flux-operator-mcp` locally in Claude Code — gives Claude access to Flux resources, failure tracing, and root cause analysis. Do this now so Claude can help debug issues throughout the rest of the deployment.
 - [ ] Run `task template:tidy` — archives the template files (cluster.yaml, nodes.yaml, templates/) that are no longer needed after bootstrap
 
 ---
@@ -87,7 +89,9 @@ Must be running before any app that needs PostgreSQL.
 - [ ] `monitoring/gatus` — deploy; annotate HTTPRoutes with `gatus.home-operations.com/enabled: "true"` as you add apps
 - [ ] `monitoring/smartctl-exporter` — NVMe SMART metrics
 - [ ] `monitoring/unifi-poller` — UniFi metrics; import Grafana dashboard ID `11315`
+- [ ] `monitoring/flux-webui` — Flux Operator Web UI for live cluster inventory
 - [ ] Configure Alertmanager webhook → ntfy-alertmanager → Ntfy topic
+- [ ] Add Flux → Grafana annotations: deploy a Grafana `Provider` + `Alert` in `flux-system` so Flux deployments appear as markers on Grafana dashboards
 
 ---
 
@@ -135,6 +139,14 @@ These have no hard dependencies on the media stack — deploy whenever you're re
 ### 11 — Productivity
 
 - [ ] `productivity/excalidraw` — deploy; expose via HTTPRoute behind Authentik forward auth
+
+---
+
+### Post-deployment — local tooling
+
+These run on your development machine, not in the cluster.
+
+- [ ] Set up `grafana/mcp-grafana` in Claude Code — gives Claude read access to Loki logs, Prometheus metrics, dashboards, and annotations
 
 ---
 

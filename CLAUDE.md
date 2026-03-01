@@ -65,6 +65,7 @@ TB4 cables must be connected **before** first boot so interfaces are present at 
 
 ## Architecture decisions
 
+- **GitOps:** Flux via [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator) — manages Flux itself declaratively via `FluxInstance` CRD (replaces CLI bootstrap). Includes Web UI and enables MCP server.
 - **CNI:** Cilium (included in template)
 - **Ingress:** Envoy Gateway (included in template)
 - **DNS:** external-dns + AdGuard Home + Cloudflare Tunnel (cloudflared)

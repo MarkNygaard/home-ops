@@ -90,7 +90,7 @@ Each JetKVM plugs into a node via HDMI + USB, allowing remote console access, BI
 
 | Component | Purpose |
 |-----------|---------|
-| [Flux](https://github.com/fluxcd/flux2) | GitOps continuous delivery |
+| [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator) | Manages Flux lifecycle declaratively — installs, upgrades, and configures Flux via a `FluxInstance` CRD. Includes the Web UI and enables the MCP server. Replaces the traditional `flux bootstrap` CLI approach. |
 | [Cilium](https://github.com/cilium/cilium) | CNI / load balancer (replaces kube-proxy) |
 | [cert-manager](https://github.com/cert-manager/cert-manager) | TLS certificate management |
 | [Envoy Gateway](https://github.com/envoyproxy/gateway) | Internal & external HTTP/S gateway |
@@ -291,6 +291,7 @@ Homepage annotations are added directly to each app's service (e.g. Radarr, Jell
 | **Ntfy** | Push notifications | Self-hosted notification server — sends alerts to iOS/Android via the Ntfy app |
 | **smartctl-exporter** | NVMe drive health | Exports SMART data (health, temperature, wear) from all drives to Prometheus — visible in Grafana |
 | **Unifi Poller** | UniFi metrics exporter | Scrapes the UDM Pro API and exposes Prometheus metrics — client counts, traffic, AP stats, switch ports. Community Grafana dashboards available. |
+| **Flux Operator Web UI** | Flux dashboard | Official web UI via the Flux Operator — shows all HelmReleases, Kustomizations, sync status, health, and workload details. Auto-generated from live Flux resources. Expose via HTTPRoute behind Authentik. |
 
 **Log pipeline:** Alloy (DaemonSet) tails container logs on every node → ships to Loki via its HTTP push API → Grafana queries Loki. No PVC or secrets needed — Alloy only needs the Loki endpoint URL in its config.
 
@@ -358,7 +359,9 @@ Ntfy is a pub/sub push notification server. Apps send an HTTP POST to a topic UR
 
 This is separate from the `alerts` component (which sends *failures* to Alertmanager → Ntfy). Grafana annotations capture *all deployments* as timeline markers.
 
-**Grafana MCP server:** The official [`grafana/mcp-grafana`](https://github.com/grafana/mcp-grafana) MCP server gives Claude Code read access to Grafana for AI-assisted debugging. Configure it locally (not deployed in the cluster) pointing at `grafana.mnygaard.io` with a Grafana service account token.
+**MCP servers for Claude Code:** Two MCP servers give Claude Code direct access to the cluster for AI-assisted debugging and operations. Both run locally (not deployed in the cluster).
+
+**[`grafana/mcp-grafana`](https://github.com/grafana/mcp-grafana)** — read access to Grafana (logs, metrics, dashboards):
 
 | Capability | Useful for this setup |
 |------------|----------------------|
@@ -370,6 +373,33 @@ This is separate from the `alerts` component (which sends *failures* to Alertman
 | OnCall | Not needed — solo operator |
 
 Run with `--disable-write` for read-only mode. Requires exempting the Grafana API from Authentik forward auth (scoped to the service account token), or using the internal cluster URL.
+
+**[`flux-operator-mcp`](https://fluxcd.io/blog/2025/05/ai-assisted-gitops/)** — direct access to Flux and Kubernetes resources:
+
+| Capability | What it does |
+|------------|-------------|
+| Failure tracing | Traces issues from Kustomization → HelmRelease → Deployment → Pod logs |
+| Root cause analysis | Analyzes failed deployments and identifies the root cause |
+| Cluster inventory | Lists all Flux resources, versions, sync status |
+| Operations | Resume suspended resources, compare configs |
+| Dependency diagrams | Generates visual pipeline dependency graphs |
+| Live Flux docs | Accesses current Flux documentation for accurate guidance |
+
+Install via `brew install controlplaneio-fluxcd/tap/flux-operator-mcp`. Configure in Claude Code's MCP settings:
+
+```json
+{
+  "flux-operator-mcp": {
+    "command": "flux-operator-mcp",
+    "args": ["serve"],
+    "env": { "KUBECONFIG": "/path/to/.kube/config" }
+  }
+}
+```
+
+Respects kubeconfig RBAC permissions, masks Secret values, and supports read-only observation mode via service account impersonation.
+
+**Together:** Grafana MCP answers *"what's happening?"* (logs, metrics) while Flux MCP answers *"what's deployed and why is it broken?"* (GitOps state, failure chains).
 
 ### Databases
 
@@ -592,8 +622,10 @@ kubernetes/
     │   │   └── app/ helmrelease           (DaemonSet — runs on every node, exports NVMe SMART data)
     │   ├── keda/
     │   │   └── app/ helmrelease           (Phase 3: enables nfs-scaler component)
-    │   └── unifi-poller/
-    │       └── app/ helmrelease, secret.sops                (UDM Pro credentials)
+    │   ├── unifi-poller/
+    │   │   └── app/ helmrelease, secret.sops                (UDM Pro credentials)
+    │   └── flux-webui/
+    │       └── app/ helmrelease, httproute          (Flux Operator Web UI — live cluster dashboard)
     │
     │   # In flux-system (already exists in template):
     │   # Add grafana-annotations provider.yaml + alert.yaml
@@ -687,9 +719,12 @@ kubernetes/
 3. Fill in `cluster.yaml` and `nodes.yaml`.
 4. Run `task template:render` to generate configs (uses `age.key` to seal SOPS secrets).
 5. Run `task talos:bootstrap` to initialise the cluster.
-6. Run `task bootstrap:apps` to deploy Flux and all base applications.
-   - This creates the `cluster-secrets` Kubernetes Secret in each namespace (via the `sops` component). Flux uses `substituteFrom` to pull values like `${SECRET_DOMAIN}` and `${SECRET_CLOUDFLARE_TOKEN}` from this Secret into HelmRelease and Kustomization resources.
+6. Run `task bootstrap:apps` to deploy the Flux Operator and all base applications.
+   - The template's `bootstrap:apps` task installs Flux via CLI. After initial bootstrap, replace with the **Flux Operator** (`FluxInstance` CRD) so Flux itself is managed declaratively via Git. This enables the Web UI, MCP server, and lets Renovate handle Flux upgrades like any other HelmRelease.
+   - This also creates the `cluster-secrets` Kubernetes Secret in each namespace (via the `sops` component). Flux uses `substituteFrom` to pull values like `${SECRET_DOMAIN}` and `${SECRET_CLOUDFLARE_TOKEN}` from this Secret into HelmRelease and Kustomization resources.
 7. Flux takes over — push changes to GitHub to manage the cluster.
+
+> **Flux Operator migration:** After the initial CLI bootstrap gets Flux running, deploy the [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator) Helm chart and create a `FluxInstance` resource that declares the desired Flux version and controllers. The Operator takes over management of Flux from that point — upgrades, configuration, and scaling all happen via Git commits. This closes the "Flux manages everything except Flux" loop.
 
 ### Talos node upgrades
 
