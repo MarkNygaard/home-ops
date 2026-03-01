@@ -28,7 +28,7 @@ Node 2 [TB4-B] ──── [TB4-B] Node 3
 |-----------|-------|-------------|
 | Thunderbolt 4 (x2 per node) | 40 Gbps | Inter-node cluster traffic (pod-to-pod) |
 | 2.5 GbE (x2 per node) | 2.5 Gbps | LAN / management / Kubernetes node IP |
-| SFP+ (x2 per node) | 10 Gbps | Storage traffic to TrueNAS via aggregation switch |
+| SFP+ (x2 per node) | 10 Gbps | Storage traffic to TrueNAS via USW-Aggregation (Phase 3 — unused until then) |
 
 > **Talos note:** Thunderbolt networking requires the `thunderbolt` and `thunderbolt_net` kernel modules — both are already in the schematic.
 
@@ -188,28 +188,32 @@ Note the **schematic ID** — it goes in each node's `schematic_id` field.
 
 **Hardware:**
 - Supermicro CSE-826 (12-bay 2U chassis) running TrueNAS
-- Connected to the cluster via SFP+ (10 GbE) directly on the USW-Pro-HD-24-PoE
+- Connected to the cluster via SFP+ (10 GbE) on the USW-Aggregation
 
-**Network upgrade (coincides with moving to the new house):**
-- Replace US-8-60W with **UniFi USW-Pro-HD-24-PoE** — 22× 2.5GbE + 2× 10GbE RJ45 + 4× SFP+; enough SFP+ ports to connect NAS and nodes directly without a separate aggregation switch
-- UDM Pro is already in place (replaced USG-3P in Phase 1) — connect to the new switch via SFP+ uplink
+**Network upgrade:**
+- Add **UniFi USW-Aggregation** (8× SFP+) — dedicated 10G switch for all MS-01 nodes and TrueNAS, with SFP+ uplink to UDM Pro
+- Keep **US-8-60W** for APs and other low-bandwidth devices (connected to UDM Pro via GbE)
+- UDM Pro is already in place (replaced USG-3P in Phase 1)
+
+> **Future:** When more ports are needed (new house, additional devices), add a 48-port switch (e.g. USW-48-PoE) to replace the US-8-60W.
 
 **Network layout:**
 
 ```
-                  [UDM Pro]
-                     |
-               SFP+/10G uplink
-                     |
-          [USW-Pro-HD-24-PoE]
-          /      |       \        \
-    SFP+/10G  SFP+/10G  2.5GbE  SFP+/10G
-        /         |         \        \
-  [MS-01 #1] [MS-01 #2] [MS-01 #3] [TrueNAS CSE-826]
-        (TB4 full mesh between all three nodes)
-```
+              [UDM Pro]
+              /        \
+     SFP+/10G uplink   GbE uplink
+          /                \
+  [USW-Aggregation]    [US-8-60W]
+   /    |     \    \        |
+ SFP+ SFP+  SFP+ SFP+    PoE
+  /     |      \    \       |
+[#1]  [#2]   [#3] [NAS]  [APs]
 
-> MS-01 #3 connects via 2.5GbE RJ45 to free up the 4th SFP+ port. For home media workloads 2.5GbE is sufficient — storage traffic rarely saturates it.
+MS-01 nodes: #1, #2, #3
+NAS: TrueNAS CSE-826
+(TB4 full mesh between all three nodes)
+```
 
 **Kubernetes integration:** [`democratic-csi`](https://github.com/democratic-csi/democratic-csi) — provides StorageClasses backed by TrueNAS:
 

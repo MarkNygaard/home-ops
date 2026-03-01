@@ -12,7 +12,7 @@ GitOps via Flux. Documentation lives in [SETUP.md](SETUP.md) (reasoning) and [DE
 | Nodes | 3× Minisforum MS-01 |
 | RAM | 16 GB DDR5 per node (upgrade to 32–64 GB planned) |
 | Storage | 1 TB Samsung 990 Pro NVMe per node (OS + local PVCs) |
-| Networking | 2× 2.5 GbE (LAN/management), 2× SFP+ 10 GbE (future NAS), 2× TB4 (inter-node mesh) |
+| Networking | 2× 2.5 GbE (LAN/management), 2× SFP+ 10 GbE (unused until Phase 3 USW-Aggregation + NAS), 2× TB4 (inter-node mesh) |
 
 All nodes are control-plane + worker (no dedicated workers).
 
@@ -92,7 +92,7 @@ Full network design is in [NETWORK.md](NETWORK.md). Key facts:
 - 5 VLANs: DEFAULT (1/192.168.1.0/24), TRUSTED (10/192.168.10.0/24), SERVERS (42/192.168.42.0/24), GUEST (50/192.168.50.0/24), IOT (69/192.168.69.0/24)
 - Cluster nodes on SERVERS VLAN; `node_cidr: 192.168.42.0/24` in cluster.yaml
 - Reserved cluster IPs: .10 (API), .11 (DNS gateway), .12 (internal Envoy), .13 (external Envoy), .100–.102 (nodes)
-- UDM Pro already in place (replaced USG-3P in Phase 1); Phase 3 adds USW-Pro-HD-24-PoE (replaces US-8-60W)
+- UDM Pro already in place (replaced USG-3P in Phase 1); Phase 3 adds USW-Aggregation (8× SFP+) for nodes + NAS, keeps US-8-60W for APs
 - **UDM Pro firewall:** uses custom zones (Trusted, Servers, IoT, Untrusted) with Block All default between zones — only allow rules needed, no block rules. The "Auto Allow Return Traffic" checkbox on allow rules does not work; explicit per-pair return traffic rules (Connection State: Return Traffic) are required. See [NETWORK.md](NETWORK.md) firewall section for the full ruleset.
 
 ## Renovate

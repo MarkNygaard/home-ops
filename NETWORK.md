@@ -17,9 +17,14 @@ Home network design for the cluster. See [SETUP.md](SETUP.md) for cluster-specif
 
 ### Phase 3 upgrade (new house + rack)
 
-| Device | Replaces | Reason |
-|--------|----------|--------|
-| UniFi USW-Pro-HD-24-PoE | US-8-60W | 22× 2.5GbE + 2× 10GbE RJ45 + 4× SFP+; enough SFP+ for NAS + nodes without a separate aggregation switch. Connects to UDM Pro via SFP+ uplink. |
+| Device | Role | Reason |
+|--------|------|--------|
+| UniFi USW-Aggregation | SFP+ aggregation | 8× SFP+ ports — connects all 3 MS-01 nodes + TrueNAS at 10G, with SFP+ uplink to UDM Pro. Bought together with the NAS. |
+| UniFi US-8-60W | PoE switch (kept) | Existing 8-port PoE switch — continues to serve APs and low-bandwidth devices. Connects to UDM Pro via GbE uplink. |
+
+> **Phase 1 (before NAS):** MS-01 nodes connect directly to UDM Pro via 1GbE ports. SFP+ ports are unused until the USW-Aggregation arrives in Phase 3.
+
+> **Future:** When more ports are needed (new house, additional devices), add a 48-port switch (e.g. USW-48-PoE) to replace the US-8-60W.
 
 ---
 
@@ -130,29 +135,30 @@ No wireless network for SERVERS — nodes and NAS are wired only.
 
 ## Switch port profiles
 
-| Port | Profile | Notes |
-|------|---------|-------|
-| MS-01 nodes | SERVERS (access) | Untagged SERVERS VLAN |
-| NAS | SERVERS (access) | Untagged SERVERS VLAN (Phase 3) |
-| APs | Trunk | Tagged: TRUSTED, IOT, GUEST; untagged: DEFAULT |
-| Inter-switch uplink | Trunk | All VLANs tagged |
-| Unassigned ports | DEFAULT | Safe default for unknown devices |
+| Port | Switch | Profile | Notes |
+|------|--------|---------|-------|
+| MS-01 nodes (SFP+) | USW-Aggregation | SERVERS (access) | Untagged SERVERS VLAN (Phase 3; UDM Pro 1GbE ports until then) |
+| NAS (SFP+) | USW-Aggregation | SERVERS (access) | Untagged SERVERS VLAN (Phase 3) |
+| USW-Aggregation uplink | UDM Pro | Trunk | SFP+ — all VLANs tagged |
+| APs | US-8-60W | Trunk | Tagged: TRUSTED, IOT, GUEST; untagged: DEFAULT |
+| US-8-60W uplink | UDM Pro | Trunk | GbE — all VLANs tagged |
+| Unassigned ports | Either | DEFAULT | Safe default for unknown devices |
 
 ---
 
-## Phase 3 — USW-Pro-HD-24-PoE switch upgrade
+## Phase 3 — USW-Aggregation switch addition
 
-When the USW-Pro-HD-24-PoE arrives (new house), swap out the US-8-60W and move nodes to faster ports.
+When the USW-Aggregation arrives, add it alongside the existing US-8-60W and move nodes to SFP+ ports.
 
-### Replace the switch
+### Add the aggregation switch
 
 1. **Backup controller config:** Settings → System → Backup → Download backup
-2. Unplug US-8-60W, plug in USW-Pro-HD-24-PoE
-3. Connect SFP+ uplink from the new switch to the UDM Pro's SFP+ LAN port
-4. Adopt the new switch in the UDM Pro controller
-5. Reassign port profiles (SERVERS access, AP trunk, etc.) on the new switch
-6. Move MS-01 nodes from UDM Pro 1GbE ports to 2.5GbE / SFP+ ports on the new switch
-7. Connect TrueNAS NAS via SFP+ to the new switch
+2. Connect SFP+ uplink from USW-Aggregation to the UDM Pro's SFP+ LAN port
+3. Adopt the USW-Aggregation in the UDM Pro controller
+4. Assign port profiles on the USW-Aggregation (SERVERS access for all SFP+ ports carrying node/NAS traffic)
+5. Move MS-01 nodes from UDM Pro 1GbE ports to SFP+ ports on the USW-Aggregation
+6. Connect TrueNAS NAS via SFP+ to the USW-Aggregation
+7. US-8-60W stays in place for APs and other devices (connected to UDM Pro via GbE)
 
 ### After migration — tighten firewall rules
 
