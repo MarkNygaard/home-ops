@@ -20,3 +20,4 @@ talosconfig
 .DS_Store
 Thumbs.db
 metal-amd64.iso
+.claude/settings.local.json

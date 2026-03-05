@@ -4,7 +4,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(xargs:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(ls -ld /c/Users/Mark/Github/home-ops-reference/*/)",
+      "Read(//c/Users/Mark/Github/home-ops/**)"
     ]
   }
 }

@@ -1,0 +1,25 @@
+---
+# Nightly restic backup to Cloudflare R2.
+# copyMethod: Direct is used because local-path-provisioner does not support
+# VolumeSnapshots. Volsync will scale down the owning pod, copy the data,
+# then scale it back up. Upgrade to copyMethod: Snapshot in Phase 3 when
+# using a snapshot-capable StorageClass (e.g., democratic-csi).
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: ${APP}
+spec:
+  sourcePVC: ${APP}
+  trigger:
+    schedule: "0 2 * * *"
+  restic:
+    copyMethod: Direct
+    pruneIntervalDays: 7
+    repository: ${APP}-volsync-secret
+    retain:
+      daily: 7
+      weekly: 4
+    moverSecurityContext:
+      runAsUser: ${VOLSYNC_PUID:=1000}
+      runAsGroup: ${VOLSYNC_PGID:=1000}
+      fsGroup: ${VOLSYNC_PGID:=1000}

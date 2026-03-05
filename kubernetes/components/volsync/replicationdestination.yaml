@@ -1,0 +1,23 @@
+---
+# Manual restore trigger. To restore from the latest R2 backup, run:
+#   kubectl annotate replicationdestination ${APP}-dst \
+#     volsync.backube/trigger-manual=restore-once \
+#     -n <namespace>
+# This will scale down the app, restore data into the PVC, then scale back up.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: ${APP}-dst
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    copyMethod: Direct
+    destinationPVC: ${APP}
+    repository: ${APP}-volsync-secret
+    moverSecurityContext:
+      runAsUser: ${VOLSYNC_PUID:=1000}
+      runAsGroup: ${VOLSYNC_PGID:=1000}
+      fsGroup: ${VOLSYNC_PGID:=1000}
