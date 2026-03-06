@@ -25,14 +25,17 @@ Step-by-step guide to follow when the servers arrive. Work top to bottom — eac
 
 Servers are in hand from here.
 
-- [ ] Connect all 3 Thunderbolt 4 cables (full mesh) before powering the nodes on — interfaces must be present at first boot
-- [ ] For each node: enter BIOS via JetKVM and set Thunderbolt security level to **No Security** — required for the TB4 link to establish between nodes
-- [ ] Boot each node via JetKVM virtual media — upload the ISO in the JetKVM web UI, mount it as a virtual USB drive, then boot the node from it. No physical USB drive needed.
-- [ ] For each node: run `talosctl get disks -n <ip> --insecure` and `talosctl get links -n <ip> --insecure` to find `disk`, `mac_addr`, and TB4 interface names/PCI paths
-- [ ] Fill in `schematic_id`, `disk`, `mac_addr`, and `address` for each node in `nodes.yaml`
-- [ ] Configure TB4 interfaces in your machineconfig using `deviceSelector.driver: thunderbolt_net` — do NOT use interface names or MAC addresses as both are unstable for TB4 (see Networking section in SETUP.md)
+- [ ] Connect all 3 Thunderbolt 4 cables (full mesh) **before** powering the nodes on — interfaces must be present at first boot
+- [ ] Connect RJ45 from each node to your UDM Pro/switch and assign those switch ports to the SERVERS VLAN (42) — nodes need network connectivity for discovery
+- [ ] Power on node 1, enter BIOS via JetKVM, set Thunderbolt security level to **No Security** — required for the TB4 link to establish between nodes. Repeat for node 2 and node 3 (move JetKVM between nodes).
+- [ ] Boot each node from the Talos ISO via JetKVM virtual media — upload the ISO in the JetKVM web UI, mount it as a virtual USB drive, then boot the node from it. No physical USB drive needed. Nodes will get temporary DHCP IPs on the SERVERS VLAN.
+- [ ] For each node: run `talosctl get disks -n <dhcp-ip> --insecure` and `talosctl get links -n <dhcp-ip> --insecure` to find `disk`, `mac_addr`, and TB4 interface names/PCI paths — use the temporary DHCP IPs (check UDM Pro client list)
+- [ ] Fill in `disk` and `mac_addr` for each node in `nodes.yaml` (`schematic_id` and `address` are already pre-filled)
+- [ ] (Optional) Create DHCP reservations on the UDM Pro for .100/.101/.102 using the discovered MACs — prevents IP conflicts, but not required since Talos sets static IPs at the OS level
+- [x] Configure TB4 interfaces in your machineconfig using `deviceSelector.driver: thunderbolt_net` — per-node patches created in `templates/config/talos/patches/k8s-{0,1,2}/tb4-network.yaml.j2` + global IOMMU patch
+- [ ] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt_net` in the driver column) — if missing, check cables and BIOS TB4 security setting
 - [ ] Run `task template:configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
-- [ ] Run `task bootstrap:talos` to initialise the cluster
+- [ ] Run `task bootstrap:talos` — applies machineconfigs to each node (nodes switch from DHCP to their static IPs .100/.101/.102 automatically), initialises etcd, and fetches kubeconfig
 - [ ] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
 - [ ] Run `task bootstrap:apps` to deploy Flux and all base applications
 - [ ] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
