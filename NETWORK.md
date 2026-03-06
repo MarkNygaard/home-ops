@@ -47,21 +47,23 @@ VLAN IDs match the third octet for easy cross-referencing.
 | IP | Purpose |
 |----|---------|
 | 192.168.42.1 | Gateway (UDM Pro) |
-| 192.168.42.10 | **Temporary:** Mac Mini (Proxmox) — becomes `cluster_api_addr` (Kubernetes API server) when MS-01s arrive |
-| 192.168.42.11 | **Temporary:** Home Assistant VM — becomes `cluster_dns_gateway_addr` (k8s-gateway) when MS-01s arrive |
+| 192.168.42.10 | `cluster_api_addr` — Kubernetes API server |
+| 192.168.42.11 | `cluster_dns_gateway_addr` — k8s-gateway |
 | 192.168.42.12 | `cluster_gateway_addr` — internal Envoy Gateway |
 | 192.168.42.13 | `cloudflare_gateway_addr` — external Envoy Gateway (Cloudflare Tunnel) |
 | 192.168.42.100 | MS-01 node 1 |
 | 192.168.42.101 | MS-01 node 2 |
 | 192.168.42.102 | MS-01 node 3 |
 | 192.168.42.200 | TrueNAS (Phase 3) |
-| 192.168.42.201 | Mac Mini (HAOS) — after MS-01 arrival, reinstall Proxmox → HAOS directly |
+| 192.168.42.201 | Mac Mini (Proxmox host) |
+| 192.168.42.202 | Home Assistant VM |
+| 192.168.42.203 | Docker VM |
 
 These are the values that go into `cluster.yaml` and `nodes.yaml`. Keep `.2`–`.9` and `.14`–`.99` free for future cluster LoadBalancer IPs.
 
 Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addresses in the reserved ranges above.
 
-> **Mac Mini note:** currently running Proxmox (`.10`) with a HAOS VM (`.11`) and a Docker VM. When MS-01s arrive: reinstall Mac Mini with HAOS directly at `.201`, update firewall rules to reference `.201`, and free `.10`/`.11` for cluster services.
+> **Mac Mini note:** running Proxmox at `.201` with Home Assistant VM at `.202` and Docker VM at `.203`. When MS-01s arrive, `.10` and `.11` will be used for cluster services (already freed).
 
 ---
 
@@ -87,8 +89,8 @@ Using the **Zone-Based Firewall** with **custom zones**. Each VLAN is assigned t
 | 1 | Trusted → Servers | Trusted | Any | Servers | Any | Management access to cluster, Proxmox, services |
 | 2 | Trusted → IoT | Trusted | Any | IoT | Any | Control smart home devices from personal devices |
 | 3 | Trusted → Untrusted | Trusted | Any | Untrusted | Any | Reach legacy/guest devices |
-| 4 | Servers → IoT (HA) | Servers | 192.168.42.11 | IoT | Any | HA only — controls WLED, sensors, etc. |
-| 5 | IoT → Servers MQTT | IoT | Any | Servers | 192.168.42.11, TCP 1883 | MQTT broker scoped to HA IP |
+| 4 | Servers → IoT (HA) | Servers | 192.168.42.202 | IoT | Any | HA only — controls WLED, sensors, etc. |
+| 5 | IoT → Servers MQTT | IoT | Any | Servers | 192.168.42.202, TCP 1883 | MQTT broker scoped to HA IP |
 | 6 | IoT → Servers DNS | IoT | Any | Servers | 192.168.42.12, TCP/UDP 53 | IoT devices resolve via cluster DNS gateway |
 | 7 | IoT → Servers (LG TV) | IoT | 192.168.69.10 | Servers | 192.168.42.12, TCP 443 | LG TV needs HTTPS access to internal Envoy Gateway |
 

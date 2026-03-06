@@ -68,7 +68,9 @@ machine:
 
 | Device | Role | VLAN | IP | Notes |
 |--------|------|------|----|-------|
-| Mac Mini | Home Assistant | SERVERS | 192.168.42.201 | Currently running Proxmox (HAOS VM + Docker VM) — will migrate to HAOS directly in future |
+| Mac Mini (Proxmox host) | Hypervisor | SERVERS | 192.168.42.201 | Runs Home Assistant VM and Docker VM |
+| ↳ Home Assistant VM | Home Assistant | SERVERS | 192.168.42.202 | HAOS running under Proxmox |
+| ↳ Docker VM | Docker | SERVERS | 192.168.42.203 | Docker workloads running under Proxmox |
 
 ### Out-of-Band Access
 
