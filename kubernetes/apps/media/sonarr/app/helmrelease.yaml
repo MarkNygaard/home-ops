@@ -11,11 +11,16 @@ spec:
   values:
     controllers:
       sonarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
               repository: ghcr.io/home-operations/sonarr
               tag: 4.0.16.2946@sha256:22651c750eedb091f6d76ade95dbecae0eeafe2b55432c3b8d8b042e8745f344
+            envFrom:
+              - secretRef:
+                  name: sonarr-secret
             env:
               TZ: Europe/Copenhagen
               SONARR__APP__INSTANCENAME: Sonarr

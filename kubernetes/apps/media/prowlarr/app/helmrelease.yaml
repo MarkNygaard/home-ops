@@ -11,11 +11,16 @@ spec:
   values:
     controllers:
       prowlarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
               repository: ghcr.io/home-operations/prowlarr
               tag: 2.3.2.5245@sha256:e2459e199564ab852c6e677e951cef36c172a8e71a0e1c90665631b5a0c57438
+            envFrom:
+              - secretRef:
+                  name: prowlarr-secret
             env:
               TZ: Europe/Copenhagen
               PROWLARR__APP__INSTANCENAME: Prowlarr

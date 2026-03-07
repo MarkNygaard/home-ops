@@ -11,6 +11,8 @@ spec:
   values:
     controllers:
       recyclarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
         type: cronjob
         cronjob:
           schedule: "0 5 * * *"
@@ -22,6 +24,9 @@ spec:
               repository: ghcr.io/recyclarr/recyclarr
               tag: 8.1.0@sha256:1039bcecc98f4d3f4d9c8bb29cbfd1829c2b06d44d8802e392e7c2b42dfb2f40
             args: ["sync"]
+            envFrom:
+              - secretRef:
+                  name: recyclarr-secret
             env:
               TZ: Europe/Copenhagen
             securityContext:
