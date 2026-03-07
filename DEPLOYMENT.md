@@ -75,9 +75,9 @@ The template already deploys Envoy Gateway, cert-manager, external-dns, and clou
 
 Must be running before any app that needs PostgreSQL.
 
-- [ ] `database/cloudnativepg` — deploy the operator first, wait for it to be ready
-- [ ] `database/cloudnativepg` cluster — deploy `cluster.yaml` (TimescaleDB image), wait for cluster to show `Cluster in healthy state`
-- [ ] `database/redis` — deploy
+- [x] `database/cloudnativepg` — operator v0.27.1 deployed
+- [x] `database/cloudnativepg` cluster — PostgreSQL 16 with pgvecto.rs, `Cluster in healthy state`
+- [x] `database/redis` — Valkey 8.1.1 ephemeral cache deployed
 
 ---
 
