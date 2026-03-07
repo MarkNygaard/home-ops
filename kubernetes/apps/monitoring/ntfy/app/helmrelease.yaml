@@ -46,7 +46,7 @@ spec:
           - path: /var/cache/ntfy
       config:
         type: configMap
-        name: ntfy-server
+        name: ntfy
         globalMounts:
           - path: /etc/ntfy/server.yml
             subPath: server.yml
