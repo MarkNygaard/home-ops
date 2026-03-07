@@ -51,9 +51,9 @@ Servers are in hand from here.
 
 Deploy these before anything else — other apps depend on them.
 
-- [ ] `kube-system/snapshot-controller` — required by Volsync; deploy first
-- [ ] `kube-system/intel-gpu-resource-driver` — required by Jellyfin QuickSync
-- [ ] `kube-system/system-upgrade` — Talos upgrade controller + UpgradePlan
+- [x] `kube-system/snapshot-controller` — required by Volsync; deploy first
+- [x] `kube-system/intel-gpu-resource-driver` — required by Jellyfin QuickSync
+- [x] `kube-system/system-upgrade` — Talos upgrade controller (tuppr) + TalosUpgrade/KubernetesUpgrade CRs
 
 ---
 
