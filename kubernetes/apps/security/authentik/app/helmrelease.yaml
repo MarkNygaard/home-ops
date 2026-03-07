@@ -1,0 +1,109 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: authentik
+  interval: 1h
+  values:
+    controllers:
+      server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/goauthentik/server
+              tag: 2025.2.4
+            command:
+              - ak
+              - server
+            envFrom:
+              - secretRef:
+                  name: authentik-secret
+            env:
+              AUTHENTIK_POSTGRESQL__HOST: postgres-rw.database.svc.cluster.local
+              AUTHENTIK_POSTGRESQL__NAME: authentik
+              AUTHENTIK_POSTGRESQL__USER: authentik
+              AUTHENTIK_REDIS__HOST: redis.database.svc.cluster.local
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 1Gi
+      worker:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/goauthentik/server
+              tag: 2025.2.4
+            command:
+              - ak
+              - worker
+            envFrom:
+              - secretRef:
+                  name: authentik-secret
+            env:
+              AUTHENTIK_POSTGRESQL__HOST: postgres-rw.database.svc.cluster.local
+              AUTHENTIK_POSTGRESQL__NAME: authentik
+              AUTHENTIK_POSTGRESQL__USER: authentik
+              AUTHENTIK_REDIS__HOST: redis.database.svc.cluster.local
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      server:
+        controller: server
+        ports:
+          http:
+            port: 9000
+      worker:
+        controller: worker
+        ports:
+          http:
+            port: 9000
+    persistence:
+      media:
+        type: emptyDir
+        globalMounts:
+          - path: /media
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      app:
+        hostnames:
+          - "auth.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: server
+                port: 9000
