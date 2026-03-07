@@ -55,6 +55,10 @@ spec:
         existingClaim: jellyfin
         globalMounts:
           - path: /config
+      media:
+        existingClaim: media
+        globalMounts:
+          - path: /media
       cache:
         type: emptyDir
         globalMounts:

@@ -76,6 +76,10 @@ spec:
     persistence:
       config:
         existingClaim: sonarr
+      media:
+        existingClaim: media
+        globalMounts:
+          - path: /media
       tmp:
         type: emptyDir
     route:

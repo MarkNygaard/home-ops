@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./media-pvc.yaml
   - ./bazarr/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
