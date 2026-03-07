@@ -100,8 +100,8 @@ Must be running before any app that needs PostgreSQL.
 - [x] `monitoring/smartctl-exporter` — NVMe SMART metrics (DaemonSet, one pod per node)
 - [x] `monitoring/unpoller` — UniFi metrics from UDM Pro via read-only local admin account
 - [x] `monitoring/flux-webui` — Flux Operator Web UI at flux.${SECRET_DOMAIN} (internal HTTPRoute on existing flux-operator service)
-- [ ] Configure Alertmanager webhook → ntfy-alertmanager → Ntfy topic
-- [ ] Add Flux → Grafana annotations: deploy a Grafana `Provider` + `Alert` in `flux-system` so Flux deployments appear as markers on Grafana dashboards
+- [x] Configure Alertmanager webhook → ntfy `/alertmanager` topic (Watchdog/InfoInhibitor suppressed)
+- [x] Add Flux → Grafana annotations: Provider + Alert in `flux-system` for deployment markers
 
 ---
 
