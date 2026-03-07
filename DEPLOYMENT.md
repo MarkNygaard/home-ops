@@ -43,7 +43,7 @@ Servers are in hand from here.
 - [x] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
 - [x] Deploy the Flux Operator (`flux-operator` HelmRelease + `FluxInstance` CRD) — deployed via `bootstrap:apps` helmfile
 - [x] Set up `flux-operator-mcp` locally in Claude Code — gives Claude access to Flux resources, failure tracing, and root cause analysis. Do this now so Claude can help debug issues throughout the rest of the deployment.
-- [ ] Run `task template:tidy` — archives the template files (cluster.yaml, nodes.yaml, templates/) that are no longer needed after bootstrap
+- [x] Run `task template:tidy` — archives the template files (cluster.yaml, nodes.yaml, templates/) that are no longer needed after bootstrap
 
 ---
 
