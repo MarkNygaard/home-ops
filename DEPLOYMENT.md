@@ -93,10 +93,10 @@ Must be running before any app that needs PostgreSQL.
 
 - [x] `monitoring/kube-prometheus-stack` — Prometheus + Alertmanager + node-exporter + kube-state-metrics (Grafana disabled, managed separately)
 - [x] `monitoring/grafana` — Grafana Operator + Grafana instance CR (dashboards/datasources as CRDs)
-- [ ] `monitoring/loki` — log aggregation
-- [ ] `monitoring/alloy` — deploy after Loki; collects pod logs on every node and ships to Loki
-- [ ] `monitoring/ntfy` — deploy first so Gatus and Alertmanager have somewhere to send alerts
-- [ ] `monitoring/gatus` — deploy; annotate HTTPRoutes with `gatus.home-operations.com/enabled: "true"` as you add apps
+- [x] `monitoring/loki` — log aggregation (SingleBinary, filesystem storage, 14d retention)
+- [x] `monitoring/alloy` — DaemonSet log collector shipping pod logs to Loki
+- [x] `monitoring/ntfy` — push notification server (ntfy v2.17.0, internal HTTPRoute)
+- [x] `monitoring/gatus` — uptime monitoring with auto HTTPRoute discovery, public status page at status.${SECRET_DOMAIN}
 - [ ] `monitoring/smartctl-exporter` — NVMe SMART metrics
 - [ ] `monitoring/unifi-poller` — UniFi metrics; import Grafana dashboard ID `11315`
 - [ ] `monitoring/flux-webui` — Flux Operator Web UI for live cluster inventory
