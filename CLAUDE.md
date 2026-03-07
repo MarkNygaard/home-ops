@@ -68,19 +68,19 @@ TB4 cables must be connected **before** first boot so interfaces are present at 
 - **GitOps:** Flux via [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator) — manages Flux itself declaratively via `FluxInstance` CRD (replaces CLI bootstrap). Includes Web UI and enables MCP server.
 - **CNI:** Cilium (included in template)
 - **Ingress:** Envoy Gateway (included in template)
-- **DNS:** external-dns + AdGuard Home + Cloudflare Tunnel (cloudflared)
+- **DNS:** AdGuard Home (LB .14) + k8s-gateway (LB .11) + external-dns + Cloudflare Tunnel (cloudflared)
 - **TLS:** cert-manager (included in template)
 - **Secrets:** SOPS with age encryption
 - **Backup:** Volsync → Cloudflare R2 (`cluster-volsync` bucket) for Authentik, Radarr, Sonarr, Prowlarr
   - Qdrant and Jellyfin are **excluded** from Volsync (rebuildable, can grow large)
-- **Database:** CloudNativePG (TimescaleDB image) — no WAL archiving for now (rebuildable)
+- **Database:** CloudNativePG (pgvecto.rs image: `ghcr.io/tensorchord/cloudnative-pgvecto.rs:16`) + Valkey (ephemeral Redis-compatible cache) — no WAL archiving for now (rebuildable)
 - **Identity/SSO:** Authentik with forward auth on Envoy Gateway HTTPRoutes
 
 ## Storage phases
 
 | Phase | Storage | Used for |
 |-------|---------|---------|
-| Phase 1 (now) | `local-path-provisioner` | All PVCs — single-node, not replicated |
+| Phase 1 (active) | `local-path-provisioner` | All PVCs — single-node, not replicated |
 | Phase 3 (NAS arrives) | `democratic-csi` NFS + iSCSI | Media, large files, databases |
 | Phase 4 (optional) | `rook-ceph` | Fast in-cluster block storage if NAS latency is a bottleneck |
 
@@ -92,7 +92,7 @@ Phase 4 Ceph: requires dedicated NVMe per node (e.g. WD RED SN700 in the free M.
 Full network design is in [NETWORK.md](NETWORK.md). Key facts:
 - 5 VLANs: DEFAULT (1/192.168.1.0/24), TRUSTED (10/192.168.10.0/24), SERVERS (42/192.168.42.0/24), GUEST (50/192.168.50.0/24), IOT (69/192.168.69.0/24)
 - Cluster nodes on SERVERS VLAN; `node_cidr: 192.168.42.0/24` in cluster.yaml
-- Reserved cluster IPs: .10 (API), .11 (DNS gateway), .12 (internal Envoy), .13 (external Envoy), .100–.102 (nodes)
+- Reserved cluster IPs: .10 (API), .11 (k8s-gateway DNS), .12 (internal Envoy), .13 (external Envoy), .14 (AdGuard Home DNS), .100–.102 (nodes)
 - UDM Pro already in place (replaced USG-3P in Phase 1); Phase 3 adds USW-Aggregation (8× SFP+) for nodes + NAS, keeps US-8-60W for APs
 - **UDM Pro firewall:** uses custom zones (Trusted, Servers, IoT, Untrusted) with Block All default between zones — only allow rules needed, no block rules. The "Auto Allow Return Traffic" checkbox on allow rules does not work; explicit per-pair return traffic rules (Connection State: Return Traffic) are required. See [NETWORK.md](NETWORK.md) firewall section for the full ruleset.
 
@@ -116,5 +116,21 @@ The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** fo
 
 ## Current deployment phase
 
-**Pre-server** — servers not yet arrived. Working through the "Do this now" section of DEPLOYMENT.md.
-Update this section as deployment progresses.
+**Phase 5 — Security & Identity.** Cluster is bootstrapped and running. Phases 1–4 complete (Talos, kube-system prereqs, networking, databases). Authentik deployed and running — initial setup wizard next. See [DEPLOYMENT.md](DEPLOYMENT.md) for the full checklist.
+
+### What's deployed
+- Talos v1.12.4, Kubernetes v1.35.2, 3 control-plane+worker nodes
+- Flux Operator + FluxInstance (GitOps)
+- Cilium (CNI) + Envoy Gateway (ingress) + cert-manager (TLS)
+- AdGuard Home (DNS) + k8s-gateway + cloudflared + external-dns + unifi-dns
+- local-path-provisioner (StorageClass)
+- CloudNativePG (PostgreSQL 16 + pgvecto.rs) + Valkey (Redis)
+- Authentik (SSO) — server + worker running
+
+### Cross-namespace dependsOn
+Flux Kustomization `dependsOn` is namespace-scoped. When referencing a Kustomization in another namespace, you **must** include `namespace:` explicitly:
+```yaml
+dependsOn:
+  - name: cloudnativepg-cluster
+    namespace: database
+```
