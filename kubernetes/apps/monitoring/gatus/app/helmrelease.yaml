@@ -14,13 +14,18 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          init-config:
+          gatus-sidecar:
             image:
               repository: ghcr.io/home-operations/gatus-sidecar
-              tag: 0.0.12
-            env:
-              GATUS_CONFIG_PATH: /config/config.yaml
-              GATUS_SIDECAR_CONFIG_PATH: /config/discovery.yaml
+              tag: 0.0.13
+            args:
+              - --auto-httproute
+              - --enable-httproute
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 64Mi
             restartPolicy: Always
         containers:
           app:
@@ -28,8 +33,23 @@ spec:
               repository: ghcr.io/twin/gatus
               tag: v5.34.0
             env:
-              TZ: Europe/Copenhagen
+              GATUS_DELAY_START_SECONDS: 5
               GATUS_CONFIG_PATH: /config
+              GATUS_WEB_PORT: &port 8080
+              TZ: Europe/Copenhagen
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -47,13 +67,34 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     serviceAccount:
-      gatus:
-        enabled: true
+      gatus: {}
+    rbac:
+      roles:
+        gatus:
+          type: ClusterRole
+          rules:
+            - apiGroups: [""]
+              resources: ["services"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: ["gateway.networking.k8s.io"]
+              resources: ["gateways", "httproutes"]
+              verbs: ["get", "list", "watch"]
+      bindings:
+        gatus:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: gatus
+          subjects:
+            - identifier: gatus
     service:
       app:
         ports:
           http:
-            port: 8080
+            port: *port
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
     persistence:
       data:
         existingClaim: gatus
@@ -65,20 +106,20 @@ spec:
           - path: /config
       config-file:
         type: configMap
-        name: gatus
+        name: gatus-config
         globalMounts:
           - path: /config/config.yaml
             subPath: config.yaml
             readOnly: true
-      tmp:
-        type: emptyDir
     configMaps:
       config:
         data:
           config.yaml: |
             storage:
               type: sqlite
-              path: /data/data.db
+              caching: true
+              path: /data/gatus.db
+            metrics: true
             alerting:
               ntfy:
                 url: http://ntfy.monitoring.svc.cluster.local
@@ -90,17 +131,28 @@ spec:
                   success-threshold: 3
             connectivity:
               checker:
-                target: 1.1.1.1:443
-                interval: 60s
+                target: 1.1.1.1:53
+                interval: 1m
             endpoints:
-              - name: Flux Web UI
-                group: cluster
-                url: "tcp://flux-operator.flux-system.svc.cluster.local:8080"
-                interval: 5m
+              - name: Cloudflare
+                group: connectivity
+                url: "icmp://1.1.1.1"
+                interval: 1m
                 conditions:
                   - "[CONNECTED] == true"
+              - name: Google
+                group: connectivity
+                url: "icmp://8.8.8.8"
+                interval: 1m
+                conditions:
+                  - "[CONNECTED] == true"
+            ui:
+              title: Status | Home Ops
+              header: Status
     route:
       app:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - "status.${SECRET_DOMAIN}"
         parentRefs:
