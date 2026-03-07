@@ -36,11 +36,17 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                gpu.intel.com/i915: "1"
               limits:
                 memory: 4Gi
-                gpu.intel.com/i915: "1"
     defaultPodOptions:
+      resourceClaimTemplates:
+        - metadata:
+            name: gpu
+          spec:
+            devices:
+              requests:
+                - name: gpu
+                  deviceClassName: gpu.intel.com
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
