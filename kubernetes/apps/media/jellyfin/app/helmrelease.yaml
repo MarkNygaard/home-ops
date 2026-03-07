@@ -39,14 +39,6 @@ spec:
               limits:
                 memory: 4Gi
     defaultPodOptions:
-      resourceClaimTemplates:
-        - metadata:
-            name: gpu
-          spec:
-            devices:
-              requests:
-                - name: gpu
-                  deviceClassName: gpu.intel.com
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

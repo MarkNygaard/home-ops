@@ -61,8 +61,7 @@ spec:
               VPN_SERVICE_PROVIDER: airvpn
               VPN_TYPE: wireguard
               SERVER_COUNTRIES: Sweden
-              VPN_ENDPOINT_IP: se3.vpn.airdns.org
-              VPN_ENDPOINT_PORT: "1637"
+              WIREGUARD_ENDPOINT_PORT: "1637"
               FIREWALL_VPN_INPUT_PORTS: *torrentPort
               DOT: "off"
             envFrom:
