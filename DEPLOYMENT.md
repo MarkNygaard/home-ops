@@ -28,21 +28,21 @@ Servers are in hand from here.
 - [x] Remove Pi-hole IP from UDM Pro DNS settings — let it fall back to default so the cluster nodes don't depend on the Docker VM for DNS
 - [x] Connect all 3 Thunderbolt 4 cables (full mesh) **before** powering the nodes on — interfaces must be present at first boot
 - [x] Connect RJ45 from each node to your UDM Pro/switch and assign those switch ports to the SERVERS VLAN (42) — nodes need network connectivity for discovery
-- [ ] Power on node 1, enter BIOS via JetKVM. The MS-01 BIOS has no dedicated Thunderbolt security setting — it defaults to allowing TB4 devices. Verify **DMA Control Guarantee: Enabled** and **Control IOMMU Pre-boot: Enable IOMMU during boot** under Advanced → Onboard Devices settings. Repeat for node 2 and node 3 (move JetKVM between nodes).
+- [x] Power on node 1, enter BIOS via JetKVM. The MS-01 BIOS has no dedicated Thunderbolt security setting — it defaults to allowing TB4 devices. Set **DMA Control Guarantee: Disabled** (required for TB4), **Control IOMMU Pre-boot: Enable IOMMU during boot**, and **Secure Boot: Disabled**. Repeat for node 2 and node 3 (move JetKVM between nodes).
 - [x] Boot each node from the Talos ISO via JetKVM virtual media — upload the ISO in the JetKVM web UI, mount it as a virtual USB drive, then boot the node from it. No physical USB drive needed. Nodes will get temporary DHCP IPs on the SERVERS VLAN.
 - [x] For each node: run `talosctl get disks -n <dhcp-ip> --insecure` and `talosctl get links -n <dhcp-ip> --insecure` to find `disk`, `mac_addr`, and TB4 interface names/PCI paths — use the temporary DHCP IPs (check UDM Pro client list)
 - [x] Fill in `disk` and `mac_addr` for each node in `nodes.yaml` (`schematic_id` and `address` are already pre-filled)
 - [x] (Optional) Create DHCP reservations on the UDM Pro for .100/.101/.102 using the discovered MACs — prevents IP conflicts, but not required since Talos sets static IPs at the OS level
-- [x] Configure TB4 interfaces in your machineconfig using `deviceSelector.driver: thunderbolt_net` — per-node patches created in `templates/config/talos/patches/k8s-{0,1,2}/tb4-network.yaml.j2` + global IOMMU patch
-- [] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt_net` in the driver column) — if missing, check cables and BIOS TB4 security setting
-- [x] Run `task template:configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
+- [x] Configure TB4 interfaces in your machineconfig using `deviceSelector.driver: thunderbolt-net` — per-node patches created in `templates/config/talos/patches/k8s-{0,1,2}/tb4-network.yaml.j2` + IOMMU kernel args in Image Factory schematic
+- [x] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt-net` in the driver column) — requires `thunderbolt_net` kernel module loaded via `machine.kernel.modules` patch
+- [x] Run `task configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
 - [x] Push to GitHub — repo needs the generated configs and encrypted secrets before bootstrap
 - [x] Run `task bootstrap:talos` — applies machineconfigs to each node (nodes switch from DHCP to their static IPs .100/.101/.102 automatically), initialises etcd, and fetches kubeconfig
 - [x] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
-- [ ] Run `task bootstrap:apps` to deploy Flux and all base applications
-- [ ] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
-- [ ] Deploy the Flux Operator (`flux-operator` HelmRelease + `FluxInstance` CRD) — once running, the operator manages the Flux lifecycle and the CLI-bootstrapped Flux can be removed (see SETUP.md for details)
-- [ ] Set up `flux-operator-mcp` locally in Claude Code — gives Claude access to Flux resources, failure tracing, and root cause analysis. Do this now so Claude can help debug issues throughout the rest of the deployment.
+- [x] Run `task bootstrap:apps` to deploy Flux and all base applications
+- [x] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
+- [x] Deploy the Flux Operator (`flux-operator` HelmRelease + `FluxInstance` CRD) — deployed via `bootstrap:apps` helmfile
+- [x] Set up `flux-operator-mcp` locally in Claude Code — gives Claude access to Flux resources, failure tracing, and root cause analysis. Do this now so Claude can help debug issues throughout the rest of the deployment.
 - [ ] Run `task template:tidy` — archives the template files (cluster.yaml, nodes.yaml, templates/) that are no longer needed after bootstrap
 
 ---

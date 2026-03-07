@@ -21,3 +21,4 @@ talosconfig
 Thumbs.db
 metal-amd64.iso
 .claude/settings.local.json
+.mcp.json
