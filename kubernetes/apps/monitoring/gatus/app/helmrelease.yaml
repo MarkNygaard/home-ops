@@ -18,9 +18,10 @@ spec:
             image:
               repository: ghcr.io/home-operations/gatus-sidecar
               tag: 0.0.13
-            env:
-              GATUS_CONFIG_PATH: /config/config.yaml
-              GATUS_SIDECAR_CONFIG_PATH: /config/discovery.yaml
+            args:
+              - --enable-httproute
+              - --output=/config/discovery.yaml
+              - --config=/config/config.yaml
             restartPolicy: Always
         containers:
           app:
