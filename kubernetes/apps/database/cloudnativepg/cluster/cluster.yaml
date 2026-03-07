@@ -1,0 +1,27 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 1
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 10Gi
+    storageClass: local-path
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: 256MB
+      effective_cache_size: 512MB
+      work_mem: 4MB
+      maintenance_work_mem: 64MB
+    shared_preload_libraries:
+      - vectors.so
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+  monitoring:
+    enablePodMonitor: true
