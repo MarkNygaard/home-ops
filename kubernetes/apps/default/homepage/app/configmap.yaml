@@ -32,10 +32,6 @@ data:
             icon: jellyfin.svg
             href: https://jellyfin.mnygaard.io
             description: Media server
-            widget:
-              type: jellyfin
-              url: http://jellyfin.media.svc.cluster.local:8096
-              enableNowPlaying: true
         - Radarr:
             icon: radarr.svg
             href: https://radarr.mnygaard.io
@@ -79,24 +75,15 @@ data:
             icon: overseerr.svg
             href: https://seerr.mnygaard.io
             description: Media requests
-            widget:
-              type: overseerr
-              url: http://seerr.media.svc.cluster.local:5055
     - Monitoring:
         - Grafana:
             icon: grafana.svg
             href: https://grafana.mnygaard.io
             description: Dashboards and metrics
-            widget:
-              type: grafana
-              url: http://grafana.monitoring.svc.cluster.local:3000
         - Prometheus:
             icon: prometheus.svg
             href: https://prometheus.mnygaard.io
             description: Metrics collection
-            widget:
-              type: prometheus
-              url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
         - Gatus:
             icon: gatus.svg
             href: https://gatus.mnygaard.io
