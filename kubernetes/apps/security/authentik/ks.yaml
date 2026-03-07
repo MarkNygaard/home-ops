@@ -6,7 +6,9 @@ metadata:
 spec:
   dependsOn:
     - name: cloudnativepg-cluster
+      namespace: database
     - name: redis
+      namespace: database
   interval: 1h
   path: ./kubernetes/apps/security/authentik/app
   postBuild:
