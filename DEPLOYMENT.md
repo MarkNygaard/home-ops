@@ -25,16 +25,18 @@ Step-by-step guide to follow when the servers arrive. Work top to bottom — eac
 
 Servers are in hand from here.
 
-- [ ] Connect all 3 Thunderbolt 4 cables (full mesh) **before** powering the nodes on — interfaces must be present at first boot
-- [ ] Connect RJ45 from each node to your UDM Pro/switch and assign those switch ports to the SERVERS VLAN (42) — nodes need network connectivity for discovery
-- [ ] Power on node 1, enter BIOS via JetKVM, set Thunderbolt security level to **No Security** — required for the TB4 link to establish between nodes. Repeat for node 2 and node 3 (move JetKVM between nodes).
-- [ ] Boot each node from the Talos ISO via JetKVM virtual media — upload the ISO in the JetKVM web UI, mount it as a virtual USB drive, then boot the node from it. No physical USB drive needed. Nodes will get temporary DHCP IPs on the SERVERS VLAN.
-- [ ] For each node: run `talosctl get disks -n <dhcp-ip> --insecure` and `talosctl get links -n <dhcp-ip> --insecure` to find `disk`, `mac_addr`, and TB4 interface names/PCI paths — use the temporary DHCP IPs (check UDM Pro client list)
-- [ ] Fill in `disk` and `mac_addr` for each node in `nodes.yaml` (`schematic_id` and `address` are already pre-filled)
-- [ ] (Optional) Create DHCP reservations on the UDM Pro for .100/.101/.102 using the discovered MACs — prevents IP conflicts, but not required since Talos sets static IPs at the OS level
+- [x] Remove Pi-hole IP from UDM Pro DNS settings — let it fall back to default so the cluster nodes don't depend on the Docker VM for DNS
+- [x] Connect all 3 Thunderbolt 4 cables (full mesh) **before** powering the nodes on — interfaces must be present at first boot
+- [x] Connect RJ45 from each node to your UDM Pro/switch and assign those switch ports to the SERVERS VLAN (42) — nodes need network connectivity for discovery
+- [ ] Power on node 1, enter BIOS via JetKVM. The MS-01 BIOS has no dedicated Thunderbolt security setting — it defaults to allowing TB4 devices. Verify **DMA Control Guarantee: Enabled** and **Control IOMMU Pre-boot: Enable IOMMU during boot** under Advanced → Onboard Devices settings. Repeat for node 2 and node 3 (move JetKVM between nodes).
+- [x] Boot each node from the Talos ISO via JetKVM virtual media — upload the ISO in the JetKVM web UI, mount it as a virtual USB drive, then boot the node from it. No physical USB drive needed. Nodes will get temporary DHCP IPs on the SERVERS VLAN.
+- [x] For each node: run `talosctl get disks -n <dhcp-ip> --insecure` and `talosctl get links -n <dhcp-ip> --insecure` to find `disk`, `mac_addr`, and TB4 interface names/PCI paths — use the temporary DHCP IPs (check UDM Pro client list)
+- [x] Fill in `disk` and `mac_addr` for each node in `nodes.yaml` (`schematic_id` and `address` are already pre-filled)
+- [x] (Optional) Create DHCP reservations on the UDM Pro for .100/.101/.102 using the discovered MACs — prevents IP conflicts, but not required since Talos sets static IPs at the OS level
 - [x] Configure TB4 interfaces in your machineconfig using `deviceSelector.driver: thunderbolt_net` — per-node patches created in `templates/config/talos/patches/k8s-{0,1,2}/tb4-network.yaml.j2` + global IOMMU patch
-- [ ] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt_net` in the driver column) — if missing, check cables and BIOS TB4 security setting
-- [ ] Run `task template:configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
+- [] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt_net` in the driver column) — if missing, check cables and BIOS TB4 security setting
+- [x] Run `task template:configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
+- [x] Push to GitHub — repo needs the generated configs and encrypted secrets before bootstrap
 - [ ] Run `task bootstrap:talos` — applies machineconfigs to each node (nodes switch from DHCP to their static IPs .100/.101/.102 automatically), initialises etcd, and fetches kubeconfig
 - [ ] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
 - [ ] Run `task bootstrap:apps` to deploy Flux and all base applications
@@ -59,7 +61,10 @@ Deploy these before anything else — other apps depend on them.
 
 The template already deploys Envoy Gateway, cert-manager, external-dns, and cloudflared. Add the apps that aren't in the template:
 
-- [ ] `network/adguard-home` — deploy and point your router's DNS at the cluster IP
+- [ ] `network/adguard-home` — create manifests and push to GitHub
+- [ ] Verify AdGuard Home is running and reachable at `192.168.42.11`
+- [ ] Manually set UDM Pro DNS to `192.168.42.11` (Network > Settings > DNS)
+- [ ] Stop the Pi-hole container on the Docker VM — AdGuard Home is now handling DNS, Pi-hole would conflict
 - [ ] `network/unifi-dns` — auto DNS via external-dns-unifi-webhook (controller runs on UDM Pro)
 - [ ] Verify HTTPRoutes resolve correctly via AdGuard and Cloudflare Tunnel
 
