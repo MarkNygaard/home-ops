@@ -1,0 +1,112 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: qbittorrent
+  interval: 1h
+  values:
+    controllers:
+      qbittorrent:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/qbittorrent
+              tag: 5.1.4@sha256:fc48ae3a5b3daa2e80811207f659d0349da459f086faa06810f5353050da541b
+            env:
+              TZ: Europe/Copenhagen
+              QBT_WEBUI_PORT: &port 8080
+              QBT_TORRENTING_PORT: &torrentPort 48143
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+              limits:
+                memory: 4Gi
+          gluetun:
+            image:
+              repository: ghcr.io/qdm12/gluetun
+              tag: v3.40.0
+            env:
+              VPN_SERVICE_PROVIDER: airvpn
+              VPN_TYPE: wireguard
+              SERVER_COUNTRIES: Sweden
+              VPN_ENDPOINT_IP: se3.vpn.airdns.org
+              VPN_ENDPOINT_PORT: "1637"
+              FIREWALL_VPN_INPUT_PORTS: *torrentPort
+              DOT: "off"
+            envFrom:
+              - secretRef:
+                  name: qbittorrent-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add: ["NET_ADMIN"]
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 256Mi
+        pod:
+          shareProcessNamespace: true
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 300
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      config:
+        existingClaim: qbittorrent
+        globalMounts:
+          - path: /config
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: qBittorrent
+        hostnames:
+          - "qbittorrent.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
