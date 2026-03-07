@@ -1,0 +1,102 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gatus
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gatus
+  interval: 1h
+  values:
+    controllers:
+      gatus:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-config:
+            image:
+              repository: ghcr.io/home-operations/gatus-sidecar
+              tag: 0.0.13
+            env:
+              GATUS_CONFIG_PATH: /config/config.yaml
+              GATUS_SIDECAR_CONFIG_PATH: /config/discovery.yaml
+            restartPolicy: Always
+        containers:
+          app:
+            image:
+              repository: ghcr.io/twin/gatus
+              tag: v5.34.0
+            env:
+              TZ: Europe/Copenhagen
+              GATUS_CONFIG_PATH: /config
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    serviceAccount:
+      create: true
+      name: gatus
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      data:
+        existingClaim: gatus
+        globalMounts:
+          - path: /data
+      config:
+        type: emptyDir
+        globalMounts:
+          - path: /config
+      config-file:
+        type: configMap
+        name: gatus
+        globalMounts:
+          - path: /config/config.yaml
+            subPath: config.yaml
+            readOnly: true
+      tmp:
+        type: emptyDir
+    configMaps:
+      config:
+        data:
+          config.yaml: |
+            storage:
+              type: sqlite
+              path: /data/data.db
+            alerting:
+              ntfy:
+                url: http://ntfy.monitoring.svc.cluster.local
+                topic: gatus
+                default-alert:
+                  enabled: true
+                  send-on-resolved: true
+                  failure-threshold: 3
+                  success-threshold: 3
+            connectivity:
+              checker:
+                target: 1.1.1.1:443
+                interval: 60s
+    route:
+      app:
+        hostnames:
+          - "status.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
