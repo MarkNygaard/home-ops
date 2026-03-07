@@ -91,8 +91,8 @@ Must be running before any app that needs PostgreSQL.
 
 ### 6 — Observability
 
-- [ ] `monitoring/kube-prometheus-stack` — Prometheus + Alertmanager + node-exporter + kube-state-metrics (Grafana disabled, managed separately)
-- [ ] `monitoring/grafana` — Grafana Operator + Grafana instance CR (dashboards/datasources as CRDs)
+- [x] `monitoring/kube-prometheus-stack` — Prometheus + Alertmanager + node-exporter + kube-state-metrics (Grafana disabled, managed separately)
+- [x] `monitoring/grafana` — Grafana Operator + Grafana instance CR (dashboards/datasources as CRDs)
 - [ ] `monitoring/loki` — log aggregation
 - [ ] `monitoring/alloy` — deploy after Loki; collects pod logs on every node and ships to Loki
 - [ ] `monitoring/ntfy` — deploy first so Gatus and Alertmanager have somewhere to send alerts
