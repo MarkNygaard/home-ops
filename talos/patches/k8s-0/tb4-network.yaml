@@ -2,7 +2,7 @@ machine:
   network:
     interfaces:
       - deviceSelector:
-          driver: thunderbolt_net
+          driver: thunderbolt-net
         dhcp: false
         addresses:
           - 10.0.10.1/24

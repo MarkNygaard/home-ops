@@ -46,13 +46,13 @@ All nodes are control-plane + worker (no dedicated workers).
 
 TB4 interface names (`thunderbolt0`, `thunderbolt1`) and MAC addresses are **unstable** — they change on cable insert/remove. Never configure TB4 by name or MAC.
 
-Always use `deviceSelector.driver: thunderbolt_net` in machineconfig:
+Always use `deviceSelector.driver: thunderbolt-net` in machineconfig:
 
 ```yaml
 network:
   interfaces:
     - deviceSelector:
-        driver: thunderbolt_net
+        driver: thunderbolt-net
       dhcp: false
       addresses:
         - 10.0.10.X/24

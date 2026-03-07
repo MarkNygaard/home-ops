@@ -37,8 +37,8 @@ Servers are in hand from here.
 - [] Verify TB4 interfaces appear in `talosctl get links` output (look for `thunderbolt_net` in the driver column) — if missing, check cables and BIOS TB4 security setting
 - [x] Run `task template:configure` — renders all configs from `cluster.yaml`/`nodes.yaml`, validates schemas, and encrypts all SOPS secrets
 - [x] Push to GitHub — repo needs the generated configs and encrypted secrets before bootstrap
-- [ ] Run `task bootstrap:talos` — applies machineconfigs to each node (nodes switch from DHCP to their static IPs .100/.101/.102 automatically), initialises etcd, and fetches kubeconfig
-- [ ] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
+- [x] Run `task bootstrap:talos` — applies machineconfigs to each node (nodes switch from DHCP to their static IPs .100/.101/.102 automatically), initialises etcd, and fetches kubeconfig
+- [x] Verify the cluster is healthy: `kubectl get nodes` — all three should show `Ready`
 - [ ] Run `task bootstrap:apps` to deploy Flux and all base applications
 - [ ] Verify Flux is running: `flux get kustomizations` — all should show `Applied revision`
 - [ ] Deploy the Flux Operator (`flux-operator` HelmRelease + `FluxInstance` CRD) — once running, the operator manages the Flux lifecycle and the CLI-bootstrapped Flux can be removed (see SETUP.md for details)
