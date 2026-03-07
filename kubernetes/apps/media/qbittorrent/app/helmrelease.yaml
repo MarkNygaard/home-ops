@@ -68,7 +68,9 @@ spec:
               - secretRef:
                   name: qbittorrent-secret
             securityContext:
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
+              runAsNonRoot: false
+              runAsUser: 0
               capabilities:
                 add: ["NET_ADMIN"]
             resources:
