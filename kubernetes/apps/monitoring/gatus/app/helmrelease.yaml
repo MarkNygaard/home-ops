@@ -47,8 +47,8 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     serviceAccount:
-      create: true
-      name: gatus
+      gatus:
+        enabled: true
     service:
       app:
         ports:
