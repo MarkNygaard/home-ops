@@ -8,7 +8,9 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./adguard-home/ks.yaml
   - ./cloudflare-dns/ks.yaml
   - ./cloudflare-tunnel/ks.yaml
   - ./envoy-gateway/ks.yaml
   - ./k8s-gateway/ks.yaml
+  - ./unifi-dns/ks.yaml
