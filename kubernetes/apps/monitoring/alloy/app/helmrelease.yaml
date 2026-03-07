@@ -4,9 +4,13 @@ kind: HelmRelease
 metadata:
   name: alloy
 spec:
-  chartRef:
-    kind: OCIRepository
-    name: alloy
+  chart:
+    spec:
+      chart: alloy
+      version: 1.6.1
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
   interval: 1h
   values:
     alloy:
