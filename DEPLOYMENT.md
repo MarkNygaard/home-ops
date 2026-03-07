@@ -97,9 +97,9 @@ Must be running before any app that needs PostgreSQL.
 - [x] `monitoring/alloy` — DaemonSet log collector shipping pod logs to Loki
 - [x] `monitoring/ntfy` — push notification server (ntfy v2.17.0, internal HTTPRoute)
 - [x] `monitoring/gatus` — uptime monitoring with auto HTTPRoute discovery, public status page at status.${SECRET_DOMAIN}
-- [ ] `monitoring/smartctl-exporter` — NVMe SMART metrics
-- [ ] `monitoring/unifi-poller` — UniFi metrics; import Grafana dashboard ID `11315`
-- [ ] `monitoring/flux-webui` — Flux Operator Web UI for live cluster inventory
+- [x] `monitoring/smartctl-exporter` — NVMe SMART metrics (DaemonSet, one pod per node)
+- [x] `monitoring/unpoller` — UniFi metrics from UDM Pro via read-only local admin account
+- [x] `monitoring/flux-webui` — Flux Operator Web UI at flux.${SECRET_DOMAIN} (internal HTTPRoute on existing flux-operator service)
 - [ ] Configure Alertmanager webhook → ntfy-alertmanager → Ntfy topic
 - [ ] Add Flux → Grafana annotations: deploy a Grafana `Provider` + `Alert` in `flux-system` so Flux deployments appear as markers on Grafana dashboards
 

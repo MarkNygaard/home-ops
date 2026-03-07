@@ -2,8 +2,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ./alert.yaml
   - ./helmrelease.yaml
-  - ./ocirepository.yaml
-  - ./secret.sops.yaml
   - ./httproute.yaml
+  - ./ocirepository.yaml
+  - ./provider.yaml
   - ./receiver.yaml
+  - ./secret.sops.yaml
