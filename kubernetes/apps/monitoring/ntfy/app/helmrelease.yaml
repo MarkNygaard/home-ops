@@ -1,0 +1,73 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ntfy
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: ntfy
+  interval: 1h
+  values:
+    controllers:
+      ntfy:
+        containers:
+          app:
+            image:
+              repository: binwiederhier/ntfy
+              tag: v2.17.0
+            args:
+              - serve
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: 80
+    persistence:
+      cache:
+        existingClaim: ntfy
+        globalMounts:
+          - path: /var/cache/ntfy
+      config:
+        type: configMap
+        name: ntfy-server
+        globalMounts:
+          - path: /etc/ntfy/server.yml
+            subPath: server.yml
+            readOnly: true
+      tmp:
+        type: emptyDir
+    configMaps:
+      server:
+        data:
+          server.yml: |
+            base-url: https://ntfy.${SECRET_DOMAIN}
+            listen-http: :80
+            cache-file: /var/cache/ntfy/cache.db
+            cache-duration: 48h
+            behind-proxy: true
+            keepalive-interval: 45s
+    route:
+      app:
+        hostnames:
+          - "ntfy.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
