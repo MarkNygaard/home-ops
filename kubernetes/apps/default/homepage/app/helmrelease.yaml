@@ -86,6 +86,10 @@ spec:
           - subPath: widgets.yaml
             path: /app/config/widgets.yaml
             readOnly: true
+      logs:
+        type: emptyDir
+        globalMounts:
+          - path: /app/config/logs
       tmp:
         type: emptyDir
     route:
