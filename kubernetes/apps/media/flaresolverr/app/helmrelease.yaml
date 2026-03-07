@@ -19,11 +19,14 @@ spec:
             env:
               TZ: Europe/Copenhagen
               LOG_LEVEL: info
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 50m
               limits:
-                memory: 512Mi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -35,5 +38,11 @@ spec:
           http:
             port: 8191
     persistence:
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 256Mi
+        globalMounts:
+          - path: /dev/shm
       tmp:
         type: emptyDir
