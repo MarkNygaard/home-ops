@@ -54,6 +54,7 @@ Deploy these before anything else — other apps depend on them.
 - [x] `kube-system/snapshot-controller` — required by Volsync; deploy first
 - [x] `kube-system/intel-gpu-resource-driver` — required by Jellyfin QuickSync
 - [x] `kube-system/system-upgrade` — Talos upgrade controller (tuppr) + TalosUpgrade/KubernetesUpgrade CRs
+- [x] `kube-system/local-path-provisioner` — local-path StorageClass (required for any app with PVCs)
 
 ---
 
@@ -61,11 +62,11 @@ Deploy these before anything else — other apps depend on them.
 
 The template already deploys Envoy Gateway, cert-manager, external-dns, and cloudflared. Add the apps that aren't in the template:
 
-- [ ] `network/adguard-home` — create manifests and push to GitHub
-- [ ] Verify AdGuard Home is running and reachable at `192.168.42.11`
-- [ ] Manually set UDM Pro DNS to `192.168.42.11` (Network > Settings > DNS)
+- [x] `network/adguard-home` — deployed with DNS LoadBalancer on `192.168.42.14`
+- [x] Verify AdGuard Home is running and reachable at `192.168.42.14`
+- [x] Manually set UDM Pro DNS to `192.168.42.14` for Trusted, Servers, and IoT VLANs
 - [ ] Stop the Pi-hole container on the Docker VM — AdGuard Home is now handling DNS, Pi-hole would conflict
-- [ ] `network/unifi-dns` — auto DNS via external-dns-unifi-webhook (controller runs on UDM Pro)
+- [x] `network/unifi-dns` — auto DNS via external-dns-unifi-webhook
 - [ ] Verify HTTPRoutes resolve correctly via AdGuard and Cloudflare Tunnel
 
 ---
