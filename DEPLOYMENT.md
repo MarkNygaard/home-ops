@@ -65,9 +65,9 @@ The template already deploys Envoy Gateway, cert-manager, external-dns, and clou
 - [x] `network/adguard-home` — deployed with DNS LoadBalancer on `192.168.42.14`
 - [x] Verify AdGuard Home is running and reachable at `192.168.42.14`
 - [x] Manually set UDM Pro DNS to `192.168.42.14` for Trusted, Servers, and IoT VLANs
-- [ ] Stop the Pi-hole container on the Docker VM — AdGuard Home is now handling DNS, Pi-hole would conflict
+- [x] Stop the Pi-hole container on the Docker VM — AdGuard Home is now handling DNS
 - [x] `network/unifi-dns` — auto DNS via external-dns-unifi-webhook
-- [ ] Verify HTTPRoutes resolve correctly via AdGuard and Cloudflare Tunnel
+- [x] Verify HTTPRoutes resolve correctly via AdGuard and Cloudflare Tunnel
 
 ---
 
