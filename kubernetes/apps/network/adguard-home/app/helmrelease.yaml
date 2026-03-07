@@ -41,7 +41,7 @@ spec:
         controller: adguard-home
         type: LoadBalancer
         annotations:
-          lbipam.cilium.io/ips: "192.168.42.11"
+          lbipam.cilium.io/ips: "192.168.42.14"
         ports:
           dns-tcp:
             port: 53
