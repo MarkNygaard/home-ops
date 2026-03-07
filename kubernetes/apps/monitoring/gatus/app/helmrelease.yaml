@@ -92,6 +92,13 @@ spec:
               checker:
                 target: 1.1.1.1:443
                 interval: 60s
+            endpoints:
+              - name: Flux Web UI
+                group: cluster
+                url: "tcp://flux-operator.flux-system.svc.cluster.local:8080"
+                interval: 5m
+                conditions:
+                  - "[CONNECTED] == true"
     route:
       app:
         hostnames:
