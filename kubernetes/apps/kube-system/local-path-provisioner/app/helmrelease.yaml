@@ -4,9 +4,13 @@ kind: HelmRelease
 metadata:
   name: local-path-provisioner
 spec:
-  chartRef:
-    kind: OCIRepository
-    name: local-path-provisioner
+  chart:
+    spec:
+      chart: local-path-provisioner
+      version: 0.0.35
+      sourceRef:
+        kind: HelmRepository
+        name: containeroo
   interval: 1h
   values:
     storageClass:
