@@ -107,7 +107,7 @@ Must be running before any app that needs PostgreSQL.
 
 ### 7 — Backup
 
-- [ ] `storage/volsync` — deploy the operator
+- [x] `storage/volsync` — deploy the operator (R2 credentials in cluster-secrets)
 - [ ] Add the volsync component to `radarr`, `sonarr`, `prowlarr`, and `authentik` kustomization files
 - [ ] Verify first backup completes: `kubectl get replicationsources -A`
 
