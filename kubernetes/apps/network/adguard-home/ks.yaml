@@ -4,6 +4,9 @@ kind: Kustomization
 metadata:
   name: adguard-home
 spec:
+  dependsOn:
+    - name: local-path-provisioner
+      namespace: kube-system
   interval: 1h
   path: ./kubernetes/apps/network/adguard-home/app
   postBuild:
