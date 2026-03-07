@@ -130,7 +130,7 @@ spec:
                     widget:
                       type: radarr
                       url: http://radarr.media.svc.cluster.local
-                      key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+                      key: '{{ "{{HOMEPAGE_VAR_RADARR_API_KEY}}" }}'
                 - Sonarr:
                     icon: sonarr.svg
                     href: https://sonarr.${SECRET_DOMAIN}
@@ -138,7 +138,7 @@ spec:
                     widget:
                       type: sonarr
                       url: http://sonarr.media.svc.cluster.local
-                      key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+                      key: '{{ "{{HOMEPAGE_VAR_SONARR_API_KEY}}" }}'
                 - Prowlarr:
                     icon: prowlarr.svg
                     href: https://prowlarr.${SECRET_DOMAIN}
@@ -146,7 +146,7 @@ spec:
                     widget:
                       type: prowlarr
                       url: http://prowlarr.media.svc.cluster.local
-                      key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
+                      key: '{{ "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}" }}'
                 - Bazarr:
                     icon: bazarr.svg
                     href: https://bazarr.${SECRET_DOMAIN}
@@ -154,7 +154,7 @@ spec:
                     widget:
                       type: bazarr
                       url: http://bazarr.media.svc.cluster.local:6767
-                      key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+                      key: '{{ "{{HOMEPAGE_VAR_BAZARR_API_KEY}}" }}'
                 - qBittorrent:
                     icon: qbittorrent.svg
                     href: https://qbittorrent.${SECRET_DOMAIN}
