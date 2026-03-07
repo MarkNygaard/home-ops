@@ -83,7 +83,7 @@ Must be running before any app that needs PostgreSQL.
 
 ### 5 — Security & Identity
 
-- [ ] `security/authentik` — deploy; on first boot open the web UI and complete the initial setup wizard (creates the default admin account)
+- [x] `security/authentik` — deploy; on first boot open the web UI and complete the initial setup wizard (creates the default admin account)
 - [ ] Configure Authentik providers and applications for each app you want SSO on
 - [ ] Configure forward auth on Envoy Gateway HTTPRoutes for protected apps
 
@@ -91,7 +91,8 @@ Must be running before any app that needs PostgreSQL.
 
 ### 6 — Observability
 
-- [ ] `monitoring/kube-prometheus-stack` — Prometheus + Grafana + Alertmanager
+- [ ] `monitoring/kube-prometheus-stack` — Prometheus + Alertmanager + node-exporter + kube-state-metrics (Grafana disabled, managed separately)
+- [ ] `monitoring/grafana` — Grafana Operator + Grafana instance CR (dashboards/datasources as CRDs)
 - [ ] `monitoring/loki` — log aggregation
 - [ ] `monitoring/alloy` — deploy after Loki; collects pod logs on every node and ships to Loki
 - [ ] `monitoring/ntfy` — deploy first so Gatus and Alertmanager have somewhere to send alerts
