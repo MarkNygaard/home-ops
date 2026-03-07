@@ -52,15 +52,14 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
+      automountServiceAccountToken: true
+      serviceAccountName: homepage
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-    serviceAccount:
-      create: true
-      name: homepage
     service:
       app:
         ports:

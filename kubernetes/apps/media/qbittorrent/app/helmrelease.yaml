@@ -62,6 +62,7 @@ spec:
               VPN_TYPE: wireguard
               SERVER_COUNTRIES: Sweden
               WIREGUARD_ENDPOINT_PORT: "1637"
+              FIREWALL_INPUT_PORTS: *port
               FIREWALL_VPN_INPUT_PORTS: *torrentPort
               DOT: "off"
             envFrom:
