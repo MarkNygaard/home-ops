@@ -67,7 +67,8 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     serviceAccount:
-      gatus: {}
+      gatus:
+        enabled: true
     rbac:
       roles:
         gatus:
