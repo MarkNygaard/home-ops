@@ -23,6 +23,7 @@ spec:
                   name: crawl4ai-secret
             env:
               TZ: Europe/Copenhagen
+              HOME: /home/crawl4ai
             ports:
               - name: http
                 containerPort: 11235
@@ -80,5 +81,9 @@ spec:
         sizeLimit: 1Gi
         globalMounts:
           - path: /dev/shm
+      data:
+        type: emptyDir
+        globalMounts:
+          - path: /home/crawl4ai
       tmp:
         type: emptyDir
