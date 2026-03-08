@@ -15,7 +15,7 @@ spec:
           app:
             image:
               repository: valkey/valkey
-              tag: 8.1.1
+              tag: 8.1.6
             command:
               - valkey-server
             args:
