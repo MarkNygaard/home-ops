@@ -66,12 +66,9 @@ spec:
                   type: series
                 quality_profiles:
                   - name: WEB-1080p
+                    trash_id: 72dae194fc92bf828f32cde7744e51a1
                     reset_unmatched_scores:
                       enabled: true
-                include:
-                  - template: sonarr-quality-definition-series
-                  - template: sonarr-v4-quality-profile-web-1080p
-                  - template: sonarr-v4-custom-formats-web-1080p
             radarr:
               radarr:
                 base_url: http://radarr.media.svc.cluster.local
@@ -81,9 +78,6 @@ spec:
                   type: movie
                 quality_profiles:
                   - name: HD Bluray + WEB
+                    trash_id: d1d67249d3890e49bc12e275d989a7e9
                     reset_unmatched_scores:
                       enabled: true
-                include:
-                  - template: radarr-quality-definition-movie
-                  - template: radarr-quality-profile-hd-bluray-web
-                  - template: radarr-custom-formats-hd-bluray-web

@@ -93,16 +93,20 @@ Using the **Zone-Based Firewall** with **custom zones**. Each VLAN is assigned t
 | 5 | IoT → Servers MQTT | IoT | Any | Servers | 192.168.42.202, TCP 1883 | MQTT broker scoped to HA IP |
 | 6 | IoT → Servers DNS | IoT | Any | Servers | 192.168.42.12, TCP/UDP 53 | IoT devices resolve via cluster DNS gateway |
 | 7 | IoT → Servers (LG TV) | IoT | 192.168.69.10 | Servers | 192.168.42.12, TCP 443 | LG TV needs HTTPS access to internal Envoy Gateway |
+| 8 | Servers → Untrusted | Servers | Any | Untrusted | Any | Cluster pods reaching legacy/default VLAN devices |
+| 9 | Servers → Internet | Servers | Any | External | Any | Outbound internet for cluster pods (GitHub SSH, container registries, DNS, APIs) |
 
 **Return traffic rules** (Connection State: Return Traffic):
 
 | # | Name | Source Zone | Dest Zone | Covers return for |
 |---|------|------------|-----------|-------------------|
-| 8 | Servers → Trusted (Return) | Servers | Trusted | Rule 1 |
-| 9 | IoT → Trusted (Return) | IoT | Trusted | Rule 2 |
-| 10 | Untrusted → Trusted (Return) | Untrusted | Trusted | Rule 3 |
-| 11 | IoT → Servers (Return) | IoT | Servers | Rule 4 |
-| 12 | Servers → IoT (Return) | Servers | IoT | Rules 5, 6, 7 |
+| 10 | Servers → Trusted (Return) | Servers | Trusted | Rule 1 |
+| 11 | IoT → Trusted (Return) | IoT | Trusted | Rule 2 |
+| 12 | Untrusted → Trusted (Return) | Untrusted | Trusted | Rule 3 |
+| 13 | IoT → Servers (Return) | IoT | Servers | Rule 4 |
+| 14 | Servers → IoT (Return) | Servers | IoT | Rules 5, 6, 7 |
+| 15 | Untrusted → Servers (Return) | Untrusted | Servers | Rule 8 |
+| 16 | Internet → Servers (Return) | External | Servers | Rule 9 |
 
 **Blocked by default** (no rules needed — inter-zone default is Block All):
 
@@ -111,7 +115,6 @@ Using the **Zone-Based Firewall** with **custom zones**. Each VLAN is assigned t
 | IoT → Trusted | IoT devices can't initiate to personal devices |
 | IoT → Untrusted | No reason for IoT to reach guest/default devices |
 | Servers → Trusted | Servers don't initiate to client devices |
-| Servers → Untrusted | Servers don't need guest/default access |
 | Untrusted → Servers | Guest/default devices can't reach cluster |
 | Untrusted → Trusted | Guest/default devices can't reach personal devices |
 | Untrusted → IoT | Guest/default devices can't reach smart home |
