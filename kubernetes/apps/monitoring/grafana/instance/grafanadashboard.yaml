@@ -53,7 +53,7 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "(1 - avg by (nodename) (label_replace(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)) * 100",
+              "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * 100 * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -90,7 +90,7 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "100 * (1 - label_replace(node_memory_MemAvailable_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") / label_replace(node_memory_MemTotal_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\")) * on(nodename) group_left node_uname_info",
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -127,7 +127,7 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "100 - (label_replace(node_filesystem_avail_bytes{mountpoint=\"/var\"}, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") / label_replace(node_filesystem_size_bytes{mountpoint=\"/var\"}, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * 100) * on(nodename) group_left node_uname_info",
+              "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/var\"} / node_filesystem_size_bytes{mountpoint=\"/var\"}) * 100 * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -158,7 +158,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "(1 - avg by (nodename) (label_replace(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)) * 100",
+              "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * 100 * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -188,7 +188,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -223,7 +223,7 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "label_replace(max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "expr": "max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}) * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -252,7 +252,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "expr": "max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}) * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -591,7 +591,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum by (nodename) (label_replace(rate(node_network_receive_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)",
+              "expr": "sum by (instance) (rate(node_network_receive_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m])) * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -620,7 +620,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum by (nodename) (label_replace(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)",
+              "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m])) * on(instance) group_left(nodename) node_uname_info",
               "legendFormat": "{{ nodename }}"
             }
           ]
@@ -727,8 +727,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartctl_device_available_spare * 100",
-              "legendFormat": "{{ model_name }}"
+              "expr": "smartctl_device_available_spare * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }}"
             }
           ]
         },
@@ -764,8 +764,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartctl_device_percentage_used * 100",
-              "legendFormat": "{{ model_name }}"
+              "expr": "smartctl_device_percentage_used * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }}"
             }
           ]
         },
@@ -799,8 +799,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartctl_device_temperature{temperature_type=\"current\"}",
-              "legendFormat": "{{ model_name }}"
+              "expr": "smartctl_device_temperature{temperature_type=\"current\"} * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }}"
             }
           ]
         },
@@ -828,8 +828,8 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "smartctl_device_temperature{temperature_type=\"current\"}",
-              "legendFormat": "{{ model_name }}"
+              "expr": "smartctl_device_temperature{temperature_type=\"current\"} * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }}"
             }
           ]
         },
@@ -857,12 +857,12 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "rate(smartctl_device_bytes_read[5m])",
-              "legendFormat": "{{ model_name }} read"
+              "expr": "rate(smartctl_device_bytes_read[5m]) * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }} read"
             },
             {
-              "expr": "rate(smartctl_device_bytes_written[5m])",
-              "legendFormat": "{{ model_name }} write"
+              "expr": "rate(smartctl_device_bytes_written[5m]) * on(pod, namespace) group_left(node) kube_pod_info",
+              "legendFormat": "{{ node }} write"
             }
           ]
         },
@@ -893,7 +893,7 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(unifi_client_transmit_bytes_total)",
+              "expr": "count(unpoller_client_uptime_seconds)",
               "legendFormat": "__auto"
             }
           ]
@@ -919,7 +919,7 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(unifi_client_transmit_bytes_total{radio!=\"\"})",
+              "expr": "count(unpoller_client_radio_signal_db)",
               "legendFormat": "__auto"
             }
           ]
@@ -930,8 +930,16 @@ spec:
             "defaults": {
               "color": { "mode": "thresholds" },
               "mappings": [],
-              "thresholds": { "steps": [{ "color": "blue", "value": null }] },
-              "unit": "bytes"
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "red", "value": 80 }
+                ]
+              },
+              "unit": "percent",
+              "max": 100,
+              "min": 0
             }
           },
           "gridPos": { "h": 4, "w": 4, "x": 8, "y": 64 },
@@ -942,11 +950,11 @@ spec:
             "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
             "textMode": "auto"
           },
-          "title": "UDM Memory Used",
+          "title": "UDM Memory",
           "type": "stat",
           "targets": [
             {
-              "expr": "unifi_device_memory_used_bytes{name=~\".*UDM.*|.*Dream.*\"}",
+              "expr": "unpoller_device_memory_utilization_ratio{name=\"UDM Pro\"} * 100",
               "legendFormat": "__auto"
             }
           ]
@@ -981,7 +989,7 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "unifi_device_cpu_percent{name=~\".*UDM.*|.*Dream.*\"}",
+              "expr": "unpoller_device_cpu_utilization_ratio{name=\"UDM Pro\"} * 100",
               "legendFormat": "__auto"
             }
           ]
@@ -1001,17 +1009,17 @@ spec:
                 "spanNulls": false,
                 "stacking": { "mode": "none" }
               },
-              "unit": "Bps"
+              "unit": "short"
             }
           },
           "gridPos": { "h": 7, "w": 12, "x": 0, "y": 68 },
           "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
-          "title": "AP Client Count Over Time",
+          "title": "Clients per AP Over Time",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "unifi_device_clients{name!~\".*UDM.*|.*Dream.*\"}",
-              "legendFormat": "{{ name }}"
+              "expr": "count by (ap_name) (unpoller_client_uptime_seconds{ap_name!=\"\"})",
+              "legendFormat": "{{ ap_name }}"
             }
           ]
         },
@@ -1039,11 +1047,11 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "rate(unifi_device_port_receive_bytes_total{port_name=\"WAN\"}[5m])",
+              "expr": "rate(unpoller_device_wan_receive_bytes_total{name=\"UDM Pro\"}[5m])",
               "legendFormat": "WAN RX"
             },
             {
-              "expr": "rate(unifi_device_port_transmit_bytes_total{port_name=\"WAN\"}[5m])",
+              "expr": "rate(unpoller_device_wan_transmit_bytes_total{name=\"UDM Pro\"}[5m])",
               "legendFormat": "WAN TX"
             }
           ]
