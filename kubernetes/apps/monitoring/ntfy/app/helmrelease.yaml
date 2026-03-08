@@ -61,6 +61,8 @@ spec:
             listen-http: :80
             cache-file: /var/cache/ntfy/cache.db
             cache-duration: 48h
+            auth-file: /var/cache/ntfy/user.db
+            auth-default-access: deny-all
             behind-proxy: true
             keepalive-interval: 45s
     route:
