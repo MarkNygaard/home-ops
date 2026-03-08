@@ -53,8 +53,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-              "legendFormat": "{{ instance }}"
+              "expr": "(1 - avg by (nodename) (label_replace(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)) * 100",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -90,8 +90,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
-              "legendFormat": "{{ instance }}"
+              "expr": "100 * (1 - label_replace(node_memory_MemAvailable_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") / label_replace(node_memory_MemTotal_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\")) * on(nodename) group_left node_uname_info",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -127,8 +127,8 @@ spec:
           "type": "gauge",
           "targets": [
             {
-              "expr": "100 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} * 100)",
-              "legendFormat": "{{ instance }}"
+              "expr": "100 - (label_replace(node_filesystem_avail_bytes{mountpoint=\"/var\"}, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") / label_replace(node_filesystem_size_bytes{mountpoint=\"/var\"}, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * 100) * on(nodename) group_left node_uname_info",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -158,8 +158,8 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-              "legendFormat": "{{ instance }}"
+              "expr": "(1 - avg by (nodename) (label_replace(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)) * 100",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -188,14 +188,78 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
-              "legendFormat": "{{ instance }}"
+              "expr": "label_replace(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes, \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "legendFormat": "{{ nodename }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "red", "value": 80 }
+                ]
+              },
+              "unit": "celsius"
+            }
+          },
+          "gridPos": { "h": 5, "w": 8, "x": 0, "y": 13 },
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "title": "CPU Temperature by Node",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "label_replace(max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "legendFormat": "{{ nodename }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "none" }
+              },
+              "unit": "celsius"
+            }
+          },
+          "gridPos": { "h": 5, "w": 16, "x": 8, "y": 13 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "CPU Temperature Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "label_replace(max by (instance) (node_hwmon_temp_celsius{chip=~\".*coretemp.*\"}), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
         {
           "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
           "title": "Kubernetes",
           "type": "row"
         },
@@ -527,8 +591,8 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum by (instance) (rate(node_network_receive_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*\"}[5m]))",
-              "legendFormat": "{{ instance }}"
+              "expr": "sum by (nodename) (label_replace(rate(node_network_receive_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -556,8 +620,8 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*\"}[5m]))",
-              "legendFormat": "{{ instance }}"
+              "expr": "sum by (nodename) (label_replace(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|lxc.*|cilium.*\"}[5m]), \"nodename\", \"$1\", \"instance\", \"(.*):.*\") * on(nodename) group_left node_uname_info)",
+              "legendFormat": "{{ nodename }}"
             }
           ]
         },
@@ -622,6 +686,365 @@ spec:
             {
               "expr": "sum(rate(loki_distributor_bytes_received_total[5m]))",
               "legendFormat": "bytes/s"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
+          "title": "NVMe Health",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "green", "value": 90 }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": { "h": 5, "w": 8, "x": 0, "y": 51 },
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "title": "NVMe Available Spare",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartctl_device_available_spare * 100",
+              "legendFormat": "{{ model_name }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 90 }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": { "h": 5, "w": 8, "x": 8, "y": 51 },
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "title": "NVMe Percentage Used",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartctl_device_percentage_used * 100",
+              "legendFormat": "{{ model_name }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "red", "value": 70 }
+                ]
+              },
+              "unit": "celsius"
+            }
+          },
+          "gridPos": { "h": 5, "w": 8, "x": 16, "y": 51 },
+          "options": {
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
+          },
+          "title": "NVMe Temperature",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartctl_device_temperature{temperature_type=\"current\"}",
+              "legendFormat": "{{ model_name }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "none" }
+              },
+              "unit": "celsius"
+            }
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 56 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "NVMe Temperature Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "smartctl_device_temperature{temperature_type=\"current\"}",
+              "legendFormat": "{{ model_name }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "none" }
+              },
+              "unit": "binBps"
+            }
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 56 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "NVMe Read/Write Bytes",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "rate(smartctl_device_bytes_read[5m])",
+              "legendFormat": "{{ model_name }} read"
+            },
+            {
+              "expr": "rate(smartctl_device_bytes_written[5m])",
+              "legendFormat": "{{ model_name }} write"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 63 },
+          "title": "UniFi Network",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 64 },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "title": "Total Clients",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "count(unifi_client_transmit_bytes_total)",
+              "legendFormat": "__auto"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 64 },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "title": "Wireless Clients",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "count(unifi_client_transmit_bytes_total{radio!=\"\"})",
+              "legendFormat": "__auto"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+              "unit": "bytes"
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 64 },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "title": "UDM Memory Used",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "unifi_device_memory_used_bytes{name=~\".*UDM.*|.*Dream.*\"}",
+              "legendFormat": "__auto"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "red", "value": 80 }
+                ]
+              },
+              "unit": "percent",
+              "max": 100,
+              "min": 0
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 64 },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "title": "UDM CPU",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "unifi_device_cpu_percent{name=~\".*UDM.*|.*Dream.*\"}",
+              "legendFormat": "__auto"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "none" }
+              },
+              "unit": "Bps"
+            }
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 68 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "AP Client Count Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "unifi_device_clients{name!~\".*UDM.*|.*Dream.*\"}",
+              "legendFormat": "{{ name }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "none" }
+              },
+              "unit": "Bps"
+            }
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 68 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "WAN Throughput",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "rate(unifi_device_port_receive_bytes_total{port_name=\"WAN\"}[5m])",
+              "legendFormat": "WAN RX"
+            },
+            {
+              "expr": "rate(unifi_device_port_transmit_bytes_total{port_name=\"WAN\"}[5m])",
+              "legendFormat": "WAN TX"
             }
           ]
         }
