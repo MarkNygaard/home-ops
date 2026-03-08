@@ -30,7 +30,7 @@ spec:
           - name: "null"
           - name: ntfy
             webhook_configs:
-              - url: http://ntfy.monitoring.svc.cluster.local/alertmanager
+              - url: http://ntfy-alertmanager.monitoring.svc.cluster.local:8080
                 send_resolved: true
         route:
           group_by: ["alertname", "namespace"]
@@ -45,6 +45,15 @@ spec:
             - receiver: "null"
               matchers:
                 - alertname = "Watchdog"
+            - receiver: "null"
+              matchers:
+                - alertname = "AlertmanagerFailedToSendAlerts"
+            - receiver: "null"
+              matchers:
+                - alertname = "AlertmanagerClusterFailedToSendAlerts"
+            - receiver: "null"
+              matchers:
+                - alertname = "KubeJobNotCompleted"
       alertmanagerSpec:
         externalUrl: "https://alertmanager.${SECRET_DOMAIN}"
         storage:

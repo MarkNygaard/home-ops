@@ -1,0 +1,93 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ntfy-alertmanager
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: ntfy-alertmanager
+  interval: 1h
+  values:
+    controllers:
+      ntfy-alertmanager:
+        containers:
+          app:
+            image:
+              repository: xenrox/ntfy-alertmanager
+              tag: "0.5.0"
+            args:
+              - --config
+              - /etc/ntfy-alertmanager/config.scfg
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 5m
+              limits:
+                memory: 64Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      config:
+        type: configMap
+        name: ntfy-alertmanager
+        globalMounts:
+          - path: /etc/ntfy-alertmanager/config.scfg
+            subPath: config.scfg
+            readOnly: true
+    configMaps:
+      ntfy-alertmanager:
+        data:
+          config.scfg: |
+            http-address :8080
+            log-level info
+            alert-mode single
+
+            labels {
+                order "severity"
+                severity "critical" {
+                    priority 5
+                    tags "rotating_light"
+                }
+                severity "warning" {
+                    priority 4
+                    tags "warning"
+                }
+                severity "info" {
+                    priority 3
+                    tags "information_source"
+                }
+            }
+
+            resolved {
+                tags "resolved,white_check_mark"
+                priority 2
+            }
+
+            ntfy {
+                server http://ntfy.monitoring.svc.cluster.local
+                topic alertmanager
+                access-token tk_2zd3uv3iypldyz4rualdvqfddn4pp
+            }
+
+            alertmanager {
+                silence-duration 24h
+                url http://alertmanager-operated.monitoring.svc.cluster.local:9093
+            }
+
+            cache {
+                type memory
+                duration 24h
+                cleanup-interval 1h
+            }
