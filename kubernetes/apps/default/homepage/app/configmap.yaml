@@ -120,15 +120,17 @@ data:
     color: slate
     headerStyle: clean
     statusStyle: dot
+    fiveColumns: false
     layout:
       Media:
-        style: row
-        columns: 4
+        style: column
+        column: 1
       Monitoring:
-        style: row
-        columns: 4
+        style: column
+        column: 2
       Calendar:
         style: column
+        column: 3
         header: false
   widgets.yaml: |
     - kubernetes:
