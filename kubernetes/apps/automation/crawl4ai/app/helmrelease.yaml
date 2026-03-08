@@ -14,13 +14,14 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          fix-perms:
+          copy-browsers:
             image:
               repository: docker.io/unclecode/crawl4ai
               tag: 0.8.0
-            command: ["sh", "-c", "chmod 755 /root && chmod -R o+rX /root/.cache"]
-            securityContext:
-              runAsUser: 0
+            command:
+              - sh
+              - -c
+              - cp -a /root/.cache/ms-playwright/* /browsers/
         containers:
           app:
             image:
@@ -32,7 +33,7 @@ spec:
             env:
               TZ: Europe/Copenhagen
               HOME: /home/crawl4ai
-              PLAYWRIGHT_BROWSERS_PATH: /root/.cache/ms-playwright
+              PLAYWRIGHT_BROWSERS_PATH: /browsers
             ports:
               - name: http
                 containerPort: 11235
@@ -84,6 +85,10 @@ spec:
           http:
             port: 11235
     persistence:
+      browsers:
+        type: emptyDir
+        globalMounts:
+          - path: /browsers
       shm:
         type: emptyDir
         medium: Memory
