@@ -116,7 +116,7 @@ The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** fo
 
 ## Current deployment phase
 
-**Phase 5 — Security & Identity.** Cluster is bootstrapped and running. Phases 1–4 complete (Talos, kube-system prereqs, networking, databases). Authentik deployed and running — initial setup wizard next. See [DEPLOYMENT.md](DEPLOYMENT.md) for the full checklist.
+**Phases 1–9 largely complete.** Remaining work: Phase 5 SSO configuration (Authentik providers/forward auth), Phase 7 Authentik Volsync backup, Phase 10 (Automation & AI), Phase 11 (Productivity). See [DEPLOYMENT.md](DEPLOYMENT.md) for the full checklist.
 
 ### What's deployed
 - Talos v1.12.4, Kubernetes v1.35.2, 3 control-plane+worker nodes
@@ -126,6 +126,11 @@ The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** fo
 - local-path-provisioner (StorageClass)
 - CloudNativePG (PostgreSQL 16 + pgvecto.rs) + Valkey (Redis)
 - Authentik (SSO) — server + worker running
+- kube-prometheus-stack (Prometheus + Alertmanager) + Grafana (operator) + Loki + Alloy
+- ntfy + Gatus + smartctl-exporter + unpoller + flux-webui
+- Volsync (backup to R2) — radarr, sonarr, prowlarr configured
+- Jellyfin, Prowlarr, Radarr, Sonarr, Bazarr, FlareSolverr, qBittorrent, Recyclarr, Seerr
+- Homepage dashboard
 
 ### Cross-namespace dependsOn
 Flux Kustomization `dependsOn` is namespace-scoped. When referencing a Kustomization in another namespace, you **must** include `namespace:` explicitly:

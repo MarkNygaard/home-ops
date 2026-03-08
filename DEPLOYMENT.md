@@ -157,7 +157,7 @@ These have no hard dependencies on the media stack — deploy whenever you're re
 
 These run on your development machine, not in the cluster.
 
-- [ ] Set up `grafana/mcp-grafana` in Claude Code — gives Claude read access to Loki logs, Prometheus metrics, dashboards, and annotations
+- [x] Set up `grafana/mcp-grafana` in Claude Code — gives Claude read access to Loki logs, Prometheus metrics, dashboards, and annotations
 
 ---
 
