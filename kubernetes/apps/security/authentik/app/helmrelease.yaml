@@ -28,7 +28,6 @@ spec:
               AUTHENTIK_POSTGRESQL__HOST: postgres-rw.database.svc.cluster.local
               AUTHENTIK_POSTGRESQL__NAME: authentik
               AUTHENTIK_POSTGRESQL__USER: authentik
-              AUTHENTIK_REDIS__HOST: redis.database.svc.cluster.local
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -57,7 +56,6 @@ spec:
               AUTHENTIK_POSTGRESQL__HOST: postgres-rw.database.svc.cluster.local
               AUTHENTIK_POSTGRESQL__NAME: authentik
               AUTHENTIK_POSTGRESQL__USER: authentik
-              AUTHENTIK_REDIS__HOST: redis.database.svc.cluster.local
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -87,10 +85,10 @@ spec:
           http:
             port: 9000
     persistence:
-      media:
+      data:
         type: emptyDir
         globalMounts:
-          - path: /media
+          - path: /data
       tmp:
         type: emptyDir
         globalMounts:
