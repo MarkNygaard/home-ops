@@ -92,6 +92,27 @@ data:
             icon: ntfy.svg
             href: https://ntfy.mnygaard.io
             description: Push notifications
+        - Home Assistant:
+            icon: home-assistant.svg
+            href: http://192.168.42.202:8123/dwains-dashboard/home
+            description: Home automation
+    - Calendar:
+        - Calendar:
+            widget:
+              type: calendar
+              maxEvents: 20
+              showTime: true
+              integrations:
+                - type: radarr
+                  service_group: Media
+                  service_name: Radarr
+                  params:
+                    unmonitored: false
+                - type: sonarr
+                  service_group: Media
+                  service_name: Sonarr
+                  params:
+                    unmonitored: false
   settings.yaml: |
     title: Home Operations
     favicon: https://github.com/walkxcode/dashboard-icons/raw/main/svg/kubernetes.svg
@@ -106,6 +127,9 @@ data:
       Monitoring:
         style: row
         columns: 4
+      Calendar:
+        style: column
+        header: false
   widgets.yaml: |
     - kubernetes:
         cluster:
