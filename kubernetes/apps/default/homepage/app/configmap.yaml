@@ -92,15 +92,6 @@ data:
             icon: ntfy.svg
             href: https://ntfy.mnygaard.io
             description: Push notifications
-    - Infrastructure:
-        - Envoy Gateway:
-            icon: envoy.svg
-            href: https://envoy.mnygaard.io
-            description: Ingress gateway
-        - Cert Manager:
-            icon: cert-manager.svg
-            href: ""
-            description: TLS certificate management
   settings.yaml: |
     title: Home Operations
     favicon: https://github.com/walkxcode/dashboard-icons/raw/main/svg/kubernetes.svg
@@ -115,9 +106,6 @@ data:
       Monitoring:
         style: row
         columns: 4
-      Infrastructure:
-        style: row
-        columns: 3
   widgets.yaml: |
     - kubernetes:
         cluster:
