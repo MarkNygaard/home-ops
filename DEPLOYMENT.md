@@ -95,7 +95,7 @@ Must be running before any app that needs PostgreSQL.
 - [x] `monitoring/grafana` — Grafana Operator + Grafana instance CR (dashboards/datasources as CRDs)
 - [x] `monitoring/loki` — log aggregation (SingleBinary, filesystem storage, 14d retention)
 - [x] `monitoring/alloy` — DaemonSet log collector shipping pod logs to Loki
-- [x] `monitoring/ntfy` — push notification server (ntfy v2.17.0, internal HTTPRoute)
+- [x] `monitoring/ntfy` — push notification server (ntfy v2.18.0, external HTTPRoute, auth enabled)
 - [x] `monitoring/gatus` — uptime monitoring with auto HTTPRoute discovery, public status page at status.${SECRET_DOMAIN}
 - [x] `monitoring/smartctl-exporter` — NVMe SMART metrics (DaemonSet, one pod per node)
 - [x] `monitoring/unpoller` — UniFi metrics from UDM Pro via read-only local admin account
@@ -108,7 +108,7 @@ Must be running before any app that needs PostgreSQL.
 ### 7 — Backup
 
 - [x] `storage/volsync` — deploy the operator (R2 credentials in cluster-secrets)
-- [ ] Add the volsync component to `radarr`, `sonarr`, `prowlarr`, and `authentik` kustomization files
+- [ ] Add the volsync component to `radarr`, `sonarr`, `prowlarr`, and `authentik` kustomization files (volsync source pods currently Pending — investigate PVC node affinity)
 - [ ] Verify first backup completes: `kubectl get replicationsources -A`
 
 ---
@@ -117,22 +117,22 @@ Must be running before any app that needs PostgreSQL.
 
 Deploy in this order to avoid broken links between apps.
 
-- [ ] `media/jellyfin` — verify hardware transcoding works (check logs for `i915` device)
-- [ ] `media/prowlarr` — add indexers
-- [ ] `media/radarr` — connect to Prowlarr and qBittorrent
-- [ ] `media/sonarr` — connect to Prowlarr and qBittorrent
-- [ ] `media/bazarr` — connect to Radarr and Sonarr
-- [ ] `media/flaresolverr` — add as a proxy in Prowlarr (internal only, no HTTPRoute)
-- [ ] `media/qbittorrent` (+ Gluetun sidecar) — verify VPN tunnel is up before adding to Radarr/Sonarr
-- [ ] `media/recyclarr` — deploy CronJob, run once manually to apply TRaSH Guides profiles
-- [ ] `media/seerr` — connect to Jellyfin, Radarr, and Sonarr
-- [ ] Configure Ntfy webhooks in Radarr, Sonarr, and Seerr (Settings → Notifications → Webhook)
+- [x] `media/jellyfin` — deployed on k8s-0 with shared media PVC, Webhook plugin configured to send ntfy notifications
+- [x] `media/prowlarr` — deployed, add indexers
+- [x] `media/radarr` — deployed on k8s-0, connect to Prowlarr and qBittorrent
+- [x] `media/sonarr` — deployed on k8s-0, connect to Prowlarr and qBittorrent
+- [x] `media/bazarr` — deployed on k8s-0, connect to Radarr and Sonarr
+- [x] `media/flaresolverr` — deployed (internal only, no HTTPRoute)
+- [x] `media/qbittorrent` — deployed on k8s-0 with shared media PVC
+- [x] `media/recyclarr` — CronJob deployed, TRaSH Guides profiles synced (WEB-1080p for Sonarr, HD Bluray + WEB for Radarr)
+- [x] `media/seerr` — connected to Jellyfin, Radarr, and Sonarr
+- [x] Configure Jellyfin Webhook plugin → ntfy `/media` topic for new media notifications
 
 ---
 
 ### 9 — Dashboard
 
-- [ ] `default/homepage` — configure service groups; add Homepage annotations to each app's Service as you go
+- [x] `default/homepage` — configured with Media, Monitoring, Infrastructure service groups and bookmarks; init container for v1 config compatibility
 
 ---
 
