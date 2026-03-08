@@ -5,6 +5,7 @@ metadata:
   name: homepage-config
 data:
   docker.yaml: ""
+  proxmox.yaml: ""
   kubernetes.yaml: |
     mode: cluster
   bookmarks.yaml: |
@@ -86,7 +87,7 @@ data:
             description: Metrics collection
         - Gatus:
             icon: gatus.svg
-            href: https://gatus.mnygaard.io
+            href: https://status.mnygaard.io
             description: Uptime monitoring
         - Ntfy:
             icon: ntfy.svg
