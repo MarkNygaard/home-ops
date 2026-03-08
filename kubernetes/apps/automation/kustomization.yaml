@@ -1,13 +1,12 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: database
+namespace: automation
 
 components:
   - ../../components/sops
 
 resources:
   - ./namespace.yaml
-  - ./cloudnativepg/ks.yaml
-  - ./qdrant/ks.yaml
-  - ./redis/ks.yaml
+  - ./n8n/ks.yaml
+  - ./crawl4ai/ks.yaml
