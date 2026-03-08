@@ -54,8 +54,10 @@ spec:
                   failureThreshold: 30
                   periodSeconds: 10
             securityContext:
-              allowPrivilegeEscalation: false
-              capabilities: {drop: ["ALL"]}
+              allowPrivilegeEscalation: true
+              capabilities:
+                add: ["SETUID", "SETGID"]
+                drop: ["ALL"]
             resources:
               requests:
                 cpu: 100m
