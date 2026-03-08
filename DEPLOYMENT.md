@@ -141,9 +141,9 @@ Deploy in this order to avoid broken links between apps.
 
 These have no hard dependencies on the media stack — deploy whenever you're ready.
 
-- [ ] `automation/n8n` — deploy; connect to PostgreSQL
-- [ ] `database/qdrant` — deploy with persistent storage
-- [ ] `automation/crawl4ai` — deploy with `emptyDir` shm volume (replaces Docker's `shm_size`); add OpenAI API key as SOPS secret
+- [x] `automation/n8n` — deployed with PostgreSQL (n8n database created manually in CNPG cluster), Valkey queue, HTTPRoute at `n8n.${SECRET_DOMAIN}`
+- [x] `database/qdrant` — deployed with 10Gi persistent storage (REST :6333, gRPC :6334, internal only)
+- [x] `automation/crawl4ai` — deployed with emptyDir shm volume, Playwright browsers copied via init container, OpenAI API key as SOPS secret
 
 ---
 
