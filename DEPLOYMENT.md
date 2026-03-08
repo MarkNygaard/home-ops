@@ -108,7 +108,8 @@ Must be running before any app that needs PostgreSQL.
 ### 7 — Backup
 
 - [x] `storage/volsync` — deploy the operator (R2 credentials in cluster-secrets)
-- [ ] Add the volsync component to `radarr`, `sonarr`, `prowlarr`, and `authentik` kustomization files (volsync source pods currently Pending — investigate PVC node affinity)
+- [x] Add the volsync component to `radarr`, `sonarr`, and `prowlarr` kustomization files
+- [ ] Add the volsync component to `authentik` kustomization file
 - [ ] Verify first backup completes: `kubectl get replicationsources -A`
 
 ---
