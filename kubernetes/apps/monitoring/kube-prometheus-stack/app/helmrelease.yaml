@@ -113,3 +113,21 @@ spec:
                 expr: (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1
                 labels:
                   severity: critical
+      temperature-rules:
+        groups:
+          - name: temperature
+            rules:
+              - alert: NvmeTemperatureHigh
+                annotations:
+                  summary: "NVMe temperature is {{ $value }}°C on {{ $labels.instance }}"
+                expr: smartctl_device_temperature{temperature_type="current"} > 65
+                for: 5m
+                labels:
+                  severity: warning
+              - alert: CpuTemperatureHigh
+                annotations:
+                  summary: "CPU temperature is {{ $value }}°C on {{ $labels.instance }}"
+                expr: max by (instance) (node_hwmon_temp_celsius{chip=~".*coretemp.*"}) > 80
+                for: 5m
+                labels:
+                  severity: warning
