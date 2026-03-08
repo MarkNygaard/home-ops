@@ -7,7 +7,6 @@ description: >
   home-ops", "create a new app for [app]", "scaffold [app] for kubernetes",
   "deploy [app] to the cluster", "set up [app] in home-ops", "create manifests
   for [app]", or "add [app] to the cluster".
-version: 0.1.0
 ---
 
 # home-ops-app
@@ -62,7 +61,7 @@ If `kubernetes/apps/<namespace>/` does not exist, create:
 - `kubernetes/apps/<namespace>/namespace.yaml` — see `references/patterns.md`
 - `kubernetes/apps/<namespace>/kustomization.yaml` — see `references/patterns.md`
 
-Also add the new namespace kustomization to the parent `kubernetes/apps/kustomization.yaml` if not already present.
+Flux auto-discovers namespace subdirectories — no parent registration needed.
 
 ### Step 3 — Create app file structure
 

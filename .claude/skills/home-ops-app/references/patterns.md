@@ -8,13 +8,14 @@ Templates for all manifest files. Replace `<app>`, `<namespace>`, `<port>`, and 
 
 ### Minimal (no PVC, no Volsync, no dependsOn)
 
+Note: `metadata.namespace` is omitted — the parent Kustomize namespace transformer adds it automatically.
+
 ```yaml
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: <app>
-  namespace: flux-system
 spec:
   interval: 1h
   path: ./kubernetes/apps/<namespace>/<app>/app
@@ -36,14 +37,17 @@ spec:
 ```yaml
   dependsOn:
     - name: <other-app>
-      namespace: flux-system
+      namespace: <namespace-where-other-app-lives>
 ```
 
+The namespace must be the **actual namespace** of the referenced Kustomization (set by the Kustomize namespace transformer), not `flux-system`.
+
 Common dependsOn values:
-- `cloudnativepg` — apps that need PostgreSQL
-- `authentik` — apps protected by SSO (only if Authentik deploys before this app)
-- `cert-manager` — apps needing TLS certs
-- `intel-gpu-resource-driver` — Jellyfin and other GPU apps
+- `cloudnativepg-cluster` (namespace: `database`) — apps that need PostgreSQL
+- `redis` (namespace: `database`) — apps that need Redis/Valkey
+- `authentik` (namespace: `security`) — apps protected by SSO
+- `cert-manager` (namespace: `cert-manager`) — apps needing TLS certs
+- `intel-gpu-resource-driver` (namespace: `kube-system`) — Jellyfin and other GPU apps
 
 ### With Volsync component
 
@@ -53,7 +57,6 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: <app>
-  namespace: flux-system
 spec:
   components:
     - ../../../../components/volsync
@@ -404,10 +407,17 @@ metadata:
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: <namespace>
+
+components:
+  - ../../components/sops
+
 resources:
   - ./namespace.yaml
   - ./<app>/ks.yaml      # add one line per app
 ```
+
+The `namespace:` field is a Kustomize namespace transformer — it sets the namespace on all resources (including Flux Kustomization CRs) in this directory. The `components` reference enables SOPS secret decryption for all child resources.
 
 ---
 
