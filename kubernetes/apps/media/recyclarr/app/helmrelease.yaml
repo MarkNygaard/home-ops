@@ -45,6 +45,12 @@ spec:
         runAsGroup: 1000
     persistence:
       config:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        globalMounts:
+          - path: /config
+      config-file:
         type: configMap
         name: recyclarr
         globalMounts:
