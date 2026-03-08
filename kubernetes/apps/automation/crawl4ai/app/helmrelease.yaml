@@ -13,6 +13,14 @@ spec:
       crawl4ai:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          fix-perms:
+            image:
+              repository: docker.io/unclecode/crawl4ai
+              tag: 0.8.0
+            command: ["sh", "-c", "chmod 755 /root && chmod -R o+rX /root/.cache"]
+            securityContext:
+              runAsUser: 0
         containers:
           app:
             image:
