@@ -5,7 +5,6 @@ metadata:
   name: homepage-config
 data:
   docker.yaml: ""
-  proxmox.yaml: ""
   kubernetes.yaml: |
     mode: cluster
   bookmarks.yaml: |
