@@ -56,11 +56,8 @@ spec:
                 memory: 2Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: false
+        runAsUser: 0
     service:
       app:
         ports:
@@ -73,3 +70,7 @@ spec:
         existingClaim: qdrant
         globalMounts:
           - path: /qdrant/storage
+      snapshots:
+        type: emptyDir
+        globalMounts:
+          - path: /qdrant/snapshots
