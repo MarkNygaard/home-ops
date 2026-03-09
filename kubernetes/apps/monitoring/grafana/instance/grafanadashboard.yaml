@@ -410,8 +410,13 @@ spec:
             "defaults": {
               "color": { "mode": "thresholds" },
               "mappings": [],
-              "thresholds": { "steps": [{ "color": "blue", "value": null }] },
-              "unit": "bytes"
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 3 }
+                ]
+              }
             }
           },
           "gridPos": { "h": 4, "w": 4, "x": 20, "y": 14 },
@@ -422,11 +427,11 @@ spec:
             "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
             "textMode": "auto"
           },
-          "title": "Loki Storage Used",
+          "title": "Alerts Firing",
           "type": "stat",
           "targets": [
             {
-              "expr": "sum(node_filesystem_size_bytes{mountpoint=~\"/var/lib/kubelet/pods/.*/volumes/.*loki.*\"} - node_filesystem_avail_bytes{mountpoint=~\"/var/lib/kubelet/pods/.*/volumes/.*loki.*\"})",
+              "expr": "count(ALERTS{alertstate=\"firing\"}) OR vector(0)",
               "legendFormat": "__auto"
             }
           ]
@@ -655,7 +660,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum(rate(loki_distributor_lines_received_total[5m]))",
+              "expr": "sum(rate(loki_write_sent_entries_total[5m]))",
               "legendFormat": "lines/s"
             }
           ]
@@ -684,7 +689,7 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum(rate(loki_distributor_bytes_received_total[5m]))",
+              "expr": "sum(rate(loki_write_sent_bytes_total[5m]))",
               "legendFormat": "bytes/s"
             }
           ]
