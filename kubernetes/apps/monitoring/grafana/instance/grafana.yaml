@@ -43,10 +43,37 @@ spec:
                     secretKeyRef:
                       name: grafana-secret
                       key: GF_SECURITY_ADMIN_PASSWORD
+                - name: GF_RENDERING_SERVER_URL
+                  value: http://localhost:8081/render
+                - name: GF_RENDERING_CALLBACK_URL
+                  value: http://localhost:3000/
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: {drop: ["ALL"]}
+            - name: image-renderer
+              image: docker.io/grafana/grafana-image-renderer:3.12.1
+              ports:
+                - containerPort: 8081
+                  name: renderer
+                  protocol: TCP
+              env:
+                - name: ENABLE_METRICS
+                  value: "true"
+                - name: HTTP_PORT
+                  value: "8081"
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: ["ALL"]}
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+              volumeMounts:
+                - name: renderer-shm
+                  mountPath: /dev/shm
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -57,6 +84,10 @@ spec:
             - name: grafana-data
               persistentVolumeClaim:
                 claimName: grafana-pvc
+            - name: renderer-shm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 256Mi
   httpRoute:
     spec:
       hostnames:
