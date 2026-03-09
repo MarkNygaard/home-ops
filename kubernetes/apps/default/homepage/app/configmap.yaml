@@ -75,6 +75,15 @@ data:
             icon: overseerr.svg
             href: https://seerr.mnygaard.io
             description: Media requests
+    - Automation:
+        - n8n:
+            icon: n8n.svg
+            href: https://n8n.mnygaard.io
+            description: Workflow automation
+        - Crawl4AI:
+            icon: mdi-spider-web
+            href: https://crawl4ai.mnygaard.io
+            description: Web crawler playground
     - Monitoring:
         - Grafana:
             icon: grafana.svg
@@ -84,6 +93,10 @@ data:
             icon: prometheus.svg
             href: https://prometheus.mnygaard.io
             description: Metrics collection
+        - Alertmanager:
+            icon: alertmanager.svg
+            href: https://alertmanager.mnygaard.io
+            description: Alert management
         - Gatus:
             icon: gatus.svg
             href: https://status.mnygaard.io
@@ -96,6 +109,15 @@ data:
             icon: home-assistant.svg
             href: http://192.168.42.202:8123/dwains-dashboard/home
             description: Home automation
+    - Infrastructure:
+        - Authentik:
+            icon: authentik.svg
+            href: https://auth.mnygaard.io
+            description: Identity and SSO
+        - AdGuard Home:
+            icon: adguard-home.svg
+            href: https://adguard.mnygaard.io
+            description: DNS management
     - Calendar:
         - Calendar:
             widget:
@@ -125,7 +147,13 @@ data:
       Media:
         style: column
         column: 1
+      Automation:
+        style: column
+        column: 1
       Monitoring:
+        style: column
+        column: 2
+      Infrastructure:
         style: column
         column: 2
       Calendar:
