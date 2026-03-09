@@ -84,6 +84,14 @@ spec:
         ports:
           http:
             port: 11235
+    route:
+      app:
+        hostnames:
+          - "crawl4ai.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
     persistence:
       browsers:
         type: emptyDir
