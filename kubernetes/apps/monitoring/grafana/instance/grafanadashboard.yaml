@@ -431,7 +431,7 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(ALERTS{alertstate=\"firing\"}) OR vector(0)",
+              "expr": "count(ALERTS{alertstate=\"firing\", alertname!=\"Watchdog\"}) OR vector(0)",
               "legendFormat": "__auto"
             }
           ]
