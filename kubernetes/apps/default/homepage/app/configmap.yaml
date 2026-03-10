@@ -75,15 +75,6 @@ data:
             icon: overseerr.svg
             href: https://seerr.mnygaard.io
             description: Media requests
-    - Automation:
-        - n8n:
-            icon: n8n.svg
-            href: https://n8n.mnygaard.io
-            description: Workflow automation
-        - Crawl4AI:
-            icon: mdi-spider-web
-            href: https://crawl4ai.mnygaard.io
-            description: Web crawler playground
     - Monitoring:
         - Grafana:
             icon: grafana.svg
@@ -109,16 +100,7 @@ data:
             icon: home-assistant.svg
             href: http://192.168.42.202:8123/dwains-dashboard/home
             description: Home automation
-    - Infrastructure:
-        - Authentik:
-            icon: authentik.svg
-            href: https://auth.mnygaard.io
-            description: Identity and SSO
-        - AdGuard Home:
-            icon: adguard-home.svg
-            href: https://adguard.mnygaard.io
-            description: DNS management
-    - Calendar:
+    - " ":
         - Calendar:
             widget:
               type: calendar
@@ -135,6 +117,29 @@ data:
                   service_name: Sonarr
                   params:
                     unmonitored: false
+    - Automation:
+        - n8n:
+            icon: n8n.svg
+            href: https://n8n.mnygaard.io
+            description: Workflow automation
+        - Crawl4AI:
+            icon: mdi-spider-web
+            href: https://crawl4ai.mnygaard.io
+            description: Web crawler playground
+    - Productivity:
+        - Excalidraw:
+            icon: excalidraw.svg
+            href: https://excalidraw.mnygaard.io
+            description: Whiteboard
+    - Infrastructure:
+        - Authentik:
+            icon: authentik.svg
+            href: https://auth.mnygaard.io
+            description: Identity and SSO
+        - AdGuard Home:
+            icon: adguard-home.svg
+            href: https://adguard.mnygaard.io
+            description: DNS management
   settings.yaml: |
     title: Home Operations
     favicon: https://github.com/walkxcode/dashboard-icons/raw/main/svg/kubernetes.svg
@@ -143,25 +148,20 @@ data:
     headerStyle: clean
     statusStyle: dot
     fiveColumns: false
+    maxGroupColumns: 3
     layout:
       Media:
         style: column
-        column: 1
-      Automation:
-        style: column
-        column: 2
-      Productivity:
-        style: column
-        column: 2
       Monitoring:
         style: column
-        column: 3
+      " ":
+        style: column
+      Automation:
+        style: column
+      Productivity:
+        style: column
       Infrastructure:
         style: column
-        column: 3
-      Calendar:
-        style: row
-        header: false
   widgets.yaml: |
     - kubernetes:
         cluster:
