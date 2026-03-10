@@ -147,7 +147,6 @@ data:
     color: slate
     headerStyle: clean
     statusStyle: dot
-    fiveColumns: false
     maxGroupColumns: 3
     layout:
       Media:

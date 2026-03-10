@@ -133,7 +133,7 @@ Deploy in this order to avoid broken links between apps.
 
 ### 9 — Dashboard
 
-- [x] `default/homepage` — configured with Media, Monitoring, Infrastructure service groups and bookmarks; init container for v1 config compatibility
+- [x] `default/homepage` — configured with Media, Monitoring, Automation, Productivity, Infrastructure service groups, calendar widget, and bookmarks; 3-column layout with calendar in row 1
 
 ---
 
@@ -149,7 +149,8 @@ These have no hard dependencies on the media stack — deploy whenever you're re
 
 ### 11 — Productivity
 
-- [ ] `productivity/excalidraw` — deploy; expose via HTTPRoute behind Authentik forward auth
+- [x] `productivity/excalidraw` — deployed as stateless nginx-based whiteboard app, internal HTTPRoute at `excalidraw.${SECRET_DOMAIN}`
+- [ ] Configure Authentik forward auth for excalidraw
 
 ---
 
