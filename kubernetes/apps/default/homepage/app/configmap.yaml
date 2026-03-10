@@ -100,7 +100,7 @@ data:
             icon: home-assistant.svg
             href: http://192.168.42.202:8123/dwains-dashboard/home
             description: Home automation
-    - " ":
+    - Calendar:
         - Calendar:
             widget:
               type: calendar
@@ -154,8 +154,9 @@ data:
         style: column
       Monitoring:
         style: column
-      " ":
+      Calendar:
         style: column
+        header: false
       Automation:
         style: column
       Productivity:
