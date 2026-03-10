@@ -84,11 +84,6 @@ data:
             icon: mdi-spider-web
             href: https://crawl4ai.mnygaard.io
             description: Web crawler playground
-    - Productivity:
-        - Excalidraw:
-            icon: excalidraw.svg
-            href: https://excalidraw.mnygaard.io
-            description: Whiteboard
     - Monitoring:
         - Grafana:
             icon: grafana.svg
@@ -154,19 +149,18 @@ data:
         column: 1
       Automation:
         style: column
-        column: 1
+        column: 2
       Productivity:
         style: column
-        column: 1
+        column: 2
       Monitoring:
         style: column
-        column: 2
+        column: 3
       Infrastructure:
         style: column
-        column: 2
-      Calendar:
-        style: column
         column: 3
+      Calendar:
+        style: row
         header: false
   widgets.yaml: |
     - kubernetes:
