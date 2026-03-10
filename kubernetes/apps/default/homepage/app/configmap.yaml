@@ -4,6 +4,12 @@ kind: ConfigMap
 metadata:
   name: homepage-config
 data:
+  custom.css: |
+    @media (min-width: 1280px) {
+      .services-group {
+        flex-basis: 33.333% !important;
+      }
+    }
   docker.yaml: ""
   kubernetes.yaml: |
     mode: cluster
@@ -147,7 +153,6 @@ data:
     color: slate
     headerStyle: clean
     statusStyle: dot
-    maxGroupColumns: 3
     layout:
       Media:
         style: column
