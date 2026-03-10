@@ -1,0 +1,48 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: excalidraw
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: excalidraw
+  interval: 1h
+  values:
+    controllers:
+      excalidraw:
+        containers:
+          app:
+            image:
+              repository: excalidraw/excalidraw
+              tag: latest@sha256:9a92beb30c9bc18585bfd9adbb5cf7120b756b781363a66333b31cc8a0783e51
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+    service:
+      app:
+        ports:
+          http:
+            port: 80
+    persistence:
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        hostnames:
+          - "excalidraw.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
