@@ -146,6 +146,10 @@ data:
             icon: adguard-home.svg
             href: https://adguard.mnygaard.io
             description: DNS management
+        - UniFi:
+            icon: unifi.svg
+            href: https://unifi.ui.com/
+            description: Network management
   settings.yaml: |
     title: Home Operations
     favicon: https://github.com/walkxcode/dashboard-icons/raw/main/svg/kubernetes.svg
