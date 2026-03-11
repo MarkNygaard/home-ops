@@ -44,37 +44,37 @@ Built from the [onedr0p/cluster-template](https://github.com/onedr0p/cluster-tem
 <details>
   <summary>Click to expand the full app list</summary>
 
-| Namespace | App | Description |
-|-----------|-----|-------------|
-| **media** | Jellyfin | Media server with Intel QuickSync HW transcoding |
-| | Sonarr | TV show management |
-| | Radarr | Movie management |
-| | Prowlarr | Indexer manager |
-| | Bazarr | Subtitle management |
-| | qBittorrent | Download client |
-| | Seerr | Media request management |
-| | Recyclarr | TRaSH Guides sync |
-| | FlareSolverr | Cloudflare challenge solver |
-| **monitoring** | kube-prometheus-stack | Prometheus + Alertmanager |
-| | Grafana | Dashboards (operator-managed) |
-| | Loki | Log aggregation |
-| | Alloy | Log collector |
-| | Gatus | Uptime monitoring & status page |
-| | ntfy | Push notifications |
-| | smartctl-exporter | NVMe SMART metrics |
-| | Unpoller | UniFi metrics |
-| | Flux Web UI | Flux Operator dashboard |
-| **network** | AdGuard Home | DNS server (LB .14) |
-| | cloudflared | Cloudflare Tunnel |
-| | external-dns | DNS record sync (Cloudflare) |
-| | unifi-dns | DNS record sync (UniFi) |
-| | k8s-gateway | Internal cluster DNS |
-| | Envoy Gateway | Ingress controller |
-| **security** | Authentik | SSO & identity provider |
-| **database** | CloudNativePG | PostgreSQL operator + cluster |
-| | Valkey | Redis-compatible cache |
-| **storage** | Volsync | PVC backup to R2 |
-| **default** | Homepage | Dashboard |
+| Namespace      | App                   | Description                                      |
+| -------------- | --------------------- | ------------------------------------------------ |
+| **media**      | Jellyfin              | Media server with Intel QuickSync HW transcoding |
+|                | Sonarr                | TV show management                               |
+|                | Radarr                | Movie management                                 |
+|                | Prowlarr              | Indexer manager                                  |
+|                | Bazarr                | Subtitle management                              |
+|                | qBittorrent           | Download client                                  |
+|                | Seerr                 | Media request management                         |
+|                | Recyclarr             | TRaSH Guides sync                                |
+|                | FlareSolverr          | Cloudflare challenge solver                      |
+| **monitoring** | kube-prometheus-stack | Prometheus + Alertmanager                        |
+|                | Grafana               | Dashboards (operator-managed)                    |
+|                | Loki                  | Log aggregation                                  |
+|                | Alloy                 | Log collector                                    |
+|                | Gatus                 | Uptime monitoring & status page                  |
+|                | ntfy                  | Push notifications                               |
+|                | smartctl-exporter     | NVMe SMART metrics                               |
+|                | Unpoller              | UniFi metrics                                    |
+|                | Flux Web UI           | Flux Operator dashboard                          |
+| **network**    | AdGuard Home          | DNS server (LB .14)                              |
+|                | cloudflared           | Cloudflare Tunnel                                |
+|                | external-dns          | DNS record sync (Cloudflare)                     |
+|                | unifi-dns             | DNS record sync (UniFi)                          |
+|                | k8s-gateway           | Internal cluster DNS                             |
+|                | Envoy Gateway         | Ingress controller                               |
+| **security**   | Authentik             | SSO & identity provider                          |
+| **database**   | CloudNativePG         | PostgreSQL operator + cluster                    |
+|                | Valkey                | Redis-compatible cache                           |
+| **storage**    | Volsync               | PVC backup to R2                                 |
+| **default**    | Homepage              | Dashboard                                        |
 
 </details>
 
@@ -106,46 +106,46 @@ Two instances of [external-dns](https://github.com/kubernetes-sigs/external-dns)
 
 ## Cloud Dependencies
 
-| Service | Use | Cost |
-|---------|-----|------|
-| [Cloudflare](https://www.cloudflare.com/) | Domain, DNS, Tunnel, R2 backup storage | ~$0/yr |
-| [GitHub](https://github.com/) | Repository hosting, CI/CD, Renovate | Free |
-|  |  | Total: ~$0/mo |
+| Service                                   | Use                                    |
+| ----------------------------------------- | -------------------------------------- |
+| [Cloudflare](https://www.cloudflare.com/) | Domain, DNS, Tunnel, R2 backup storage |
+| [GitHub](https://github.com/)             | Repository hosting, CI/CD, Renovate    |
+|                                           |                                        |
 
 ---
 
 ## Networking
 
-| VLAN | Name | Subnet | Purpose |
-|------|------|--------|---------|
-| 1 | Default | 192.168.1.0/24 | Default network |
-| 10 | Trusted | 192.168.10.0/24 | Trusted devices |
-| 42 | Servers | 192.168.42.0/24 | Cluster nodes & services |
-| 50 | Guest | 192.168.50.0/24 | Guest WiFi |
-| 69 | IoT | 192.168.69.0/24 | IoT devices |
+| VLAN | Name    | Subnet          | Purpose                  |
+| ---- | ------- | --------------- | ------------------------ |
+| 1    | Default | 192.168.1.0/24  | Default network          |
+| 10   | Trusted | 192.168.10.0/24 | Trusted devices          |
+| 42   | Servers | 192.168.42.0/24 | Cluster nodes & services |
+| 50   | Guest   | 192.168.50.0/24 | Guest WiFi               |
+| 69   | IoT     | 192.168.69.0/24 | IoT devices              |
 
 ### Cluster IPs (SERVERS VLAN)
 
-| IP | Function |
-|----|----------|
-| .10 | Kubernetes API |
-| .11 | k8s-gateway DNS |
-| .12 | Envoy internal gateway |
-| .13 | Envoy external gateway |
-| .14 | AdGuard Home DNS |
-| .100–.102 | Cluster nodes |
+| IP        | Function               |
+| --------- | ---------------------- |
+| .10       | Kubernetes API         |
+| .11       | k8s-gateway DNS        |
+| .12       | Envoy internal gateway |
+| .13       | Envoy external gateway |
+| .14       | AdGuard Home DNS       |
+| .100–.102 | Cluster nodes          |
 
 ---
 
 ## Hardware
 
-| Device | Qty | CPU | RAM | Storage | OS | Function |
-|--------|-----|-----|-----|---------|----|----------|
-| Minisforum MS-01 | 3 | Intel i9-13900H | 16GB DDR5 | 1TB Samsung 990 Pro NVMe | Talos Linux | Kubernetes (control-plane + worker) |
-| UniFi UDM Pro | 1 | - | - | - | - | Gateway / firewall |
-| UniFi US-8-60W | 1 | - | - | - | - | PoE switch (APs) |
-| UniFi UAP-AC-Pro | 1 | - | - | - | - | WiFi 5 AP |
-| UniFi U6-Pro | 1 | - | - | - | - | WiFi 6 AP |
+| Device           | Qty | CPU             | RAM       | Storage                  | OS          | Function                            |
+| ---------------- | --- | --------------- | --------- | ------------------------ | ----------- | ----------------------------------- |
+| Minisforum MS-01 | 3   | Intel i9-13900H | 16GB DDR5 | 1TB Samsung 990 Pro NVMe | Talos Linux | Kubernetes (control-plane + worker) |
+| UniFi UDM Pro    | 1   | -               | -         | -                        | -           | Gateway / firewall                  |
+| UniFi US-8-60W   | 1   | -               | -         | -                        | -           | PoE switch (APs)                    |
+| UniFi UAP-AC-Pro | 1   | -               | -         | -                        | -           | WiFi 5 AP                           |
+| UniFi U6-Pro     | 1   | -               | -         | -                        | -           | WiFi 6 AP                           |
 
 The 3 MS-01 nodes are interconnected via **Thunderbolt 4** in a full mesh topology (10.0.10.0/24). Each node has 2x SFP+ 10GbE ports reserved for a future USW-Aggregation switch and TrueNAS NAS.
 
