@@ -988,8 +988,8 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "unpoller_device_memory_utilization_ratio{name=\"UDM Pro\"} * 100",
-              "legendFormat": "__auto"
+              "expr": "max(unpoller_device_memory_utilization_ratio{name=\"UDM Pro\"}) * 100",
+              "legendFormat": "UDM Pro"
             }
           ]
         },
@@ -1023,8 +1023,8 @@ spec:
           "type": "stat",
           "targets": [
             {
-              "expr": "unpoller_device_cpu_utilization_ratio{name=\"UDM Pro\"} * 100",
-              "legendFormat": "__auto"
+              "expr": "max(unpoller_device_cpu_utilization_ratio{name=\"UDM Pro\"}) * 100",
+              "legendFormat": "UDM Pro"
             }
           ]
         },
@@ -1081,11 +1081,11 @@ spec:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "rate(unpoller_device_wan_receive_bytes_total{name=\"UDM Pro\"}[5m])",
+              "expr": "sum(rate(unpoller_device_wan_receive_bytes_total{name=\"UDM Pro\"}[5m]))",
               "legendFormat": "WAN RX"
             },
             {
-              "expr": "rate(unpoller_device_wan_transmit_bytes_total{name=\"UDM Pro\"}[5m])",
+              "expr": "sum(rate(unpoller_device_wan_transmit_bytes_total{name=\"UDM Pro\"}[5m]))",
               "legendFormat": "WAN TX"
             }
           ]
