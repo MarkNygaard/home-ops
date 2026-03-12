@@ -454,7 +454,36 @@ spec:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 18 },
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 18 },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "title": "Pods per Node",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum by (node) (kube_pod_info)",
+              "legendFormat": "{{ node }}"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "lineWidth": 0,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "mode": "normal" }
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 18 },
           "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
           "title": "Pod Count by Namespace",
           "type": "timeseries",
@@ -483,7 +512,7 @@ spec:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 18 },
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 18 },
           "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
           "title": "Container Restarts by Pod",
           "type": "timeseries",
