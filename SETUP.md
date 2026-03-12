@@ -185,6 +185,7 @@ Note the **schematic ID** — it goes in each node's `schematic_id` field.
 
 - Upgrade SODIMMs when DDR5 prices drop (target: 32–64 GB per node)
 - More headroom for additional workloads and future NAS caching
+- **Revisit descheduler thresholds** — the `LowNodeUtilization` plugin in `kube-system/descheduler` is tuned for 16 GB per node (memory threshold: 50%, target: 70%). With 32–64 GB, the same workloads will use a much smaller percentage of memory, so the thresholds may need lowering to keep rebalancing effective.
 
 ### Phase 3 — NAS (TrueNAS on Supermicro CSE-826)
 

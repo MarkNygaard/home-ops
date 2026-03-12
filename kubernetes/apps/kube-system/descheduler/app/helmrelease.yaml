@@ -23,7 +23,6 @@ spec:
                   defaultDisabled:
                     - FailedBarePods
                     - SystemCriticalPods
-            # TODO: Revisit thresholds after RAM upgrade (16 GB → 32-64 GB per node)
             - name: LowNodeUtilization
               args:
                 metricsUtilization:
