@@ -17,9 +17,9 @@ releases:
   - name: envoy-gateway
     namespace: network
     chart: oci://mirror.gcr.io/envoyproxy/gateway-helm
-    version: v1.7.0
+    version: v1.7.1
 
   - name: kube-prometheus-stack
     namespace: observability
     chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
-    version: 82.10.1
+    version: 82.10.3
