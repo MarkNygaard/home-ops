@@ -146,6 +146,10 @@ data:
             icon: adguard-home.svg
             href: https://adguard.mnygaard.io
             description: DNS management
+        - Proxmox:
+            icon: proxmox.svg
+            href: https://proxmox.mnygaard.io
+            description: Virtualization platform
         - UniFi:
             icon: unifi.svg
             href: https://unifi.ui.com/

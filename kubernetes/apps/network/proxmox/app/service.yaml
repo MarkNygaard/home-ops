@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxmox
+spec:
+  ports:
+    - name: https
+      port: 8006
+      protocol: TCP
+      targetPort: 8006
+      appProtocol: https
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: proxmox
+subsets:
+  - addresses:
+      - ip: 192.168.42.201
+    ports:
+      - name: https
+        port: 8006
+        protocol: TCP

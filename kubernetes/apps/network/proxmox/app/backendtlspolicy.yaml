@@ -1,0 +1,52 @@
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: proxmox
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: proxmox
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: proxmox-tls
+    hostname: pve.local
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxmox-tls
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIE7jCCAtagAwIBAgIBAjANBgkqhkiG9w0BAQsFADB2MSQwIgYDVQQDDBtQcm94
+    bW94IFZpcnR1YWwgRW52aXJvbm1lbnQxLTArBgNVBAsMJDMyNDRhZGRiLWM3YWYt
+    NDliNS1hMDM1LTNjMzYwN2I2NWJiMTEfMB0GA1UECgwWUFZFIENsdXN0ZXIgTWFu
+    YWdlciBDQTAeFw0yNTAzMTgwMTQwMzRaFw0yNzAzMTgwMTQwMzRaMFUxGTAXBgNV
+    BAsTEFBWRSBDbHVzdGVyIE5vZGUxJDAiBgNVBAoTG1Byb3htb3ggVmlydHVhbCBF
+    bnZpcm9ubWVudDESMBAGA1UEAxMJcHZlLmxvY2FsMIIBIjANBgkqhkiG9w0BAQEF
+    AAOCAQ8AMIIBCgKCAQEA4nMG+daNAfR3WPsQTb64h8Z2nC6vkhXeZiY0gGRhmj7Z
+    KK3BzXa1rD1cYuduP9h/1QEE5J2+nkybMNjpGHVLGksfDIvdyTpkYZapzEBrnAd8
+    weLte02G0ZrKT2iphlAem6TzopdSAJhupNrXvAQILoIEsuvZ6r29+T1CFOP3sp0r
+    dtUwCN4EmRG6Bu5eBG9kPenXP5FlyTDIX5di2kDe+r4Id58KU2gJaFEIGm71GQ8s
+    8SW2GRIMgZPJI27ezDXcrqFrBrlL/a/PZHV3nlcVjsDVTRujd8o+GpNtEocZA7ec
+    iU2+w0kz/wOl49wbdwL1d33GBpwgJthwvmz0jXAwmQIDAQABo4GnMIGkMAkGA1Ud
+    EwQCMAAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwQgYDVR0RBDswOYcEfwAAAYcQAAAA
+    AAAAAAAAAAAAAAAAAYIJbG9jYWxob3N0hwTAqAECggNwdmWCCXB2ZS5sb2NhbDAd
+    BgNVHQ4EFgQUdQ2asfV46GwB+Z4MH/8PsjDTV/0wHwYDVR0jBBgwFoAUqUUP8+6x
+    BqnQCPhF8to8nR12o0IwDQYJKoZIhvcNAQELBQADggIBAC6caba11S+IE1usvo8Y
+    i6Hbnl8j4kZCNAt+nk2ESaUwtN4fBGMx8Se4CKJMRTWAACEEoRw1kqqZ2OYIuhP4
+    UpwzmzNDzwjYFb+67aj9pOmkdcTHTOuP7u0GQMQh7/z6y9ILhSrZSqPf8hbPu1IA
+    IIwjQ5PaLeaUxgpiK7YnCwW7BYnpu3jyHQRizko4c+7MCP+IEQzGcMFLQ15VJFZF
+    Kf+RrAzXD5YGCGDEXKAwj8/AQKG1eujgaQNiWVJ4+Zg5NoL+0icKn8kQMXyXhE3L
+    xVEtIufjORZwe+gwhEhp6aDINIC71B2nFvpKOmOnR3xEN+2dbgazVZRJf5Epb0oe
+    t3cHo6CWS4YxVbcmt3c/6XtQRk9zCJONLIjxHfNsy+MMFea7BgGkNp0MYWoNFDn2
+    N8ImhHIrHssPulyftru5r8ZQztvLqo7UvuSWyZLNATlbsNa1Jx6OxUmmkk/a/MEX
+    pnthM1Q506qpDWlY7CWwuJIq3gEgum7LCN7rwgJwOKMR75kOgiFjVO+z6WQGvqgr
+    iptHdgYRzPtJSohd0Un8JahBnxfbcFC7yjqFqcP6EHqM54jGRL0/iMNa7fAxk6cO
+    QhKOXubwCWCVAOzoHB929OMprRKAwtXz02d+fOkVd3nr7EawUXWQ4cpgWBSwd4gl
+    K3Lze/LDDpkHgvR+W9E6qQTG
+    -----END CERTIFICATE-----
