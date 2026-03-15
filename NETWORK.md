@@ -57,13 +57,13 @@ VLAN IDs match the third octet for easy cross-referencing.
 | 192.168.42.200 | TrueNAS (Phase 3) |
 | 192.168.42.201 | Mac Mini (Proxmox host) |
 | 192.168.42.202 | Home Assistant VM |
-| 192.168.42.203 | Docker VM |
+| 192.168.42.203 | OpenClaw VM (network-isolated via `ufw` — allows DNS to .14 + internet, blocks all private networks) |
 
 These are the values that go into `cluster.yaml` and `nodes.yaml`. Keep `.2`–`.9` and `.14`–`.99` free for future cluster LoadBalancer IPs.
 
 Set the SERVERS VLAN DHCP range to `.150`–`.254` so DHCP never hands out addresses in the reserved ranges above.
 
-> **Mac Mini note:** running Proxmox at `.201` with Home Assistant VM at `.202` and Docker VM at `.203`. When MS-01s arrive, `.10` and `.11` will be used for cluster services (already freed).
+> **Mac Mini note:** running Proxmox at `.201` with Home Assistant VM at `.202` and OpenClaw VM at `.203`. When MS-01s arrive, `.10` and `.11` will be used for cluster services (already freed).
 
 ---
 
