@@ -21,8 +21,7 @@ spec:
       automount:
         enabled: false
       hostRoot: /sys/fs/cgroup
-    # NOTE: devices might need to be set if you have more than one active NIC on your hosts
-    # devices: eno+ eth+
+    devices: enp88s0
     dashboards:
       enabled: true
     endpointRoutes:
