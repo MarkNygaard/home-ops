@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/home-ops-agent
-              tag: 0.3.4
+              tag: 0.3.5
             envFrom:
               - secretRef:
                   name: home-ops-agent-secret
