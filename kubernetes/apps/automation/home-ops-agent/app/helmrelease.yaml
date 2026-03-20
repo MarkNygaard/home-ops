@@ -29,7 +29,7 @@ spec:
               NTFY_GATUS_TOPIC: gatus
               NTFY_AGENT_TOPIC: home-ops-agent
               BASE_URL: "https://agent.${SECRET_DOMAIN}"
-              CLAUDE_MODEL: claude-sonnet-4-6-20250514
+              CLAUDE_MODEL: claude-sonnet-4-6
               PR_CHECK_INTERVAL_SECONDS: "1800"
               ALERT_COOLDOWN_SECONDS: "900"
               GITHUB_REPO: MarkNygaard/home-ops
