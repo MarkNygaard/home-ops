@@ -1,0 +1,24 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: home-ops-agent
+spec:
+  dependsOn:
+    - name: cloudnativepg-cluster
+      namespace: database
+  interval: 1h
+  path: ./kubernetes/apps/automation/home-ops-agent/app
+  postBuild:
+    substitute:
+      APP: home-ops-agent
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: automation
+  wait: false
