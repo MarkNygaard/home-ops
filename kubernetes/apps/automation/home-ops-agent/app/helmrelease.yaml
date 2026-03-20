@@ -1,0 +1,139 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: home-ops-agent
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: home-ops-agent
+  interval: 1h
+  values:
+    controllers:
+      home-ops-agent:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/marknygaard/home-ops-agent
+              tag: latest
+            envFrom:
+              - secretRef:
+                  name: home-ops-agent-secret
+            env:
+              TZ: Europe/Copenhagen
+              CLUSTER_DOMAIN: "${SECRET_DOMAIN}"
+              NTFY_URL: http://ntfy.monitoring.svc.cluster.local
+              NTFY_ALERTMANAGER_TOPIC: alertmanager
+              NTFY_GATUS_TOPIC: gatus
+              NTFY_AGENT_TOPIC: home-ops-agent
+              BASE_URL: "https://agent.${SECRET_DOMAIN}"
+              CLAUDE_MODEL: claude-sonnet-4-20250514
+              PR_CHECK_INTERVAL_SECONDS: "1800"
+              ALERT_COOLDOWN_SECONDS: "900"
+              GITHUB_REPO: MarkNygaard/home-ops
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 8000
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    serviceAccount:
+      home-ops-agent:
+        enabled: true
+    rbac:
+      roles:
+        home-ops-agent:
+          type: ClusterRole
+          rules:
+            # Core read (all namespaces)
+            - apiGroups: [""]
+              resources: ["pods", "services", "events", "nodes", "configmaps", "persistentvolumeclaims", "namespaces"]
+              verbs: ["get", "list", "watch"]
+            # Pod logs
+            - apiGroups: [""]
+              resources: ["pods/log"]
+              verbs: ["get"]
+            # Pod delete (for restart)
+            - apiGroups: [""]
+              resources: ["pods"]
+              verbs: ["delete"]
+            # Workload read + restart
+            - apiGroups: ["apps"]
+              resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+              verbs: ["get", "list", "patch"]
+            # Flux CRDs
+            - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+              resources: ["kustomizations"]
+              verbs: ["get", "list", "patch"]
+            - apiGroups: ["helm.toolkit.fluxcd.io"]
+              resources: ["helmreleases"]
+              verbs: ["get", "list", "patch"]
+            - apiGroups: ["source.toolkit.fluxcd.io"]
+              resources: ["gitrepositories", "ocirepositories", "helmrepositories"]
+              verbs: ["get", "list", "patch"]
+            # Gateway API read
+            - apiGroups: ["gateway.networking.k8s.io"]
+              resources: ["httproutes", "gateways"]
+              verbs: ["get", "list"]
+            # Metrics
+            - apiGroups: ["metrics.k8s.io"]
+              resources: ["pods", "nodes"]
+              verbs: ["get", "list"]
+      bindings:
+        home-ops-agent:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: home-ops-agent
+          subjects:
+            - identifier: home-ops-agent
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: home-ops-agent
+        hostnames:
+          - "agent.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
