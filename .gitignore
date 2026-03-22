@@ -21,4 +21,8 @@ talosconfig
 Thumbs.db
 metal-amd64.iso
 .claude/settings.local.json
+.claude/skills/excalidraw-diagram-skill/
 .mcp.json
+NETWORK.md
+DEPLOYMENT.md
+SETUP.md
