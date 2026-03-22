@@ -124,6 +124,10 @@ data:
                   params:
                     unmonitored: false
     - Automation:
+        - Home-Ops Agent:
+            icon: mdi-robot
+            href: https://agent.mnygaard.io
+            description: Autonomous cluster operator
         - n8n:
             icon: n8n.svg
             href: https://n8n.mnygaard.io
