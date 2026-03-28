@@ -15,7 +15,7 @@ spec:
           app:
             image:
               repository: binwiederhier/ntfy
-              tag: v2.19.2
+              tag: v2.20.1
             args:
               - serve
             securityContext:
