@@ -17,8 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ticket0/ticket0-ai
-              tag: latest
-              pullPolicy: Always
+              tag: sha-657a888
             envFrom:
               - secretRef:
                   name: ticket0-ai-secret
