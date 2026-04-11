@@ -8,5 +8,6 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./ghcr-secret.sops.yaml
   - ./ticket0-worker/ks.yaml
   - ./ticket0-ai/ks.yaml
