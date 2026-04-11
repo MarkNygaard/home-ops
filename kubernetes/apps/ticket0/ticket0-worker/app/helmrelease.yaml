@@ -17,7 +17,8 @@ spec:
           app:
             image:
               repository: ghcr.io/ticket0/ticket0-worker
-              tag: sha-657a888
+              tag: latest
+              pullPolicy: Always
             envFrom:
               - secretRef:
                   name: ticket0-worker-secret
