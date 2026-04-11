@@ -52,7 +52,7 @@ spec:
                 readOnlyRootFilesystem: true
                 capabilities: {drop: ["ALL"]}
             - name: image-renderer
-              image: docker.io/grafana/grafana-image-renderer:v5.7.3
+              image: docker.io/grafana/grafana-image-renderer:v5.8.0
               ports:
                 - containerPort: 8081
                   name: renderer
