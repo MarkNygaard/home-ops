@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/goauthentik/server
-              tag: 2026.2.1
+              tag: 2026.2.2
             command:
               - ak
               - server
@@ -45,7 +45,7 @@ spec:
           app:
             image:
               repository: ghcr.io/goauthentik/server
-              tag: 2026.2.1
+              tag: 2026.2.2
             command:
               - ak
               - worker
