@@ -1,0 +1,12 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ticket0
+
+components:
+  - ../../components/sops
+
+resources:
+  - ./namespace.yaml
+  - ./ticket0-worker/ks.yaml
+  - ./ticket0-ai/ks.yaml
