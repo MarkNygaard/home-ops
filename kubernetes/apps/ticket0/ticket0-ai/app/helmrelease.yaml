@@ -79,6 +79,8 @@ spec:
         type: emptyDir
     route:
       app:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - "ticket0-ai.${SECRET_DOMAIN}"
         parentRefs:
