@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ticket0/ticket0-worker
-              tag: 1.1.4
+              tag: 1.1.5
             envFrom:
               - secretRef:
                   name: ticket0-worker-secret
