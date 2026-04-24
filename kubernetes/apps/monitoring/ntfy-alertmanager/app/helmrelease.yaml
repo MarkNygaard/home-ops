@@ -51,6 +51,7 @@ spec:
         data:
           config.scfg: |
             http-address :8080
+            base-url http://ntfy-alertmanager.monitoring.svc.cluster.local:8080
             log-level info
             alert-mode single
 
