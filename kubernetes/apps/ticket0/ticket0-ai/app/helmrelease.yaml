@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ticket0/ticket0-ai
-              tag: 1.0.2
+              tag: 1.1.0
             envFrom:
               - secretRef:
                   name: ticket0-ai-secret
