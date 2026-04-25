@@ -9,7 +9,7 @@ spec:
     name: loki
   interval: 1h
   values:
-    deploymentMode: SingleBinary
+    deploymentMode: Monolithic
     loki:
       auth_enabled: false
       commonConfig:
