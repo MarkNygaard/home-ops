@@ -12,6 +12,9 @@ spec:
     kubernetes:
       envoyDeployment:
         replicas: 2
+        pod:
+          annotations:
+            reloader.stakater.com/secret-auto-reload-on: mnygaard-io-production-tls
         container:
           imageRepository: mirror.gcr.io/envoyproxy/envoy
           resources:
