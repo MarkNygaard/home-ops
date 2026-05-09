@@ -11,3 +11,4 @@ resources:
   - ./n8n/ks.yaml
   - ./crawl4ai/ks.yaml
   - ./home-ops-agent/ks.yaml
+  - ./archon/ks.yaml
