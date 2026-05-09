@@ -25,6 +25,7 @@ spec:
               TZ: Europe/Copenhagen
               DOMAIN: "archon.${SECRET_DOMAIN}"
               PORT: &port 3000
+              CLAUDE_BIN_PATH: /app/node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude
             probes:
               liveness:
                 enabled: true
