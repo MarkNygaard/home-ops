@@ -69,6 +69,7 @@ spec:
     serviceAccount:
       gatus:
         enabled: true
+        automountServiceAccountToken: true
     rbac:
       roles:
         gatus:
