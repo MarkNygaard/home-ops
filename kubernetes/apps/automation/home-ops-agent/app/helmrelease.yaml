@@ -69,6 +69,7 @@ spec:
     serviceAccount:
       home-ops-agent:
         enabled: true
+        automountServiceAccountToken: true
     rbac:
       roles:
         home-ops-agent:
