@@ -70,6 +70,9 @@ spec:
         existingClaim: archon
         globalMounts:
           - path: /.archon
+            subPath: data
+          - path: /home/appuser
+            subPath: home
       tmp:
         type: emptyDir
     route:
