@@ -9,6 +9,9 @@ spec:
     name: loki
   interval: 1h
   values:
+    global:
+      image:
+        registry: docker.io
     deploymentMode: Monolithic
     loki:
       auth_enabled: false
