@@ -36,6 +36,12 @@ spec:
               ZIGBEE2MQTT_CONFIG_FRONTEND_PORT: &port 8080
               # First-run safety: don't allow joins until you explicitly enable in UI
               ZIGBEE2MQTT_CONFIG_PERMIT_JOIN: "false"
+              # Generate a fresh ZigBee network key on first run. Cross-stack
+              # migration from the previous Z-Stack USB dongle to this
+              # EmberZNet SLZB-06MU couldn't preserve device pairings (see
+              # 21:15 logs — RESET_ASSERT / ROUTE_ERROR_ADDRESS_CONFLICT).
+              # Clean slate; re-pair devices via the z2m UI.
+              ZIGBEE2MQTT_CONFIG_ADVANCED_NETWORK_KEY: GENERATE
               # HA integration on during transition (publishes discovery topics
               # so HA auto-imports devices). The new Rust app subscribes to the
               # raw zigbee2mqtt/* topics independently — discovery topics are
