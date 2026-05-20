@@ -141,9 +141,6 @@ data:
             icon: zigbee2mqtt.svg
             href: https://z2m.mnygaard.io
             description: ZigBee bridge (SLZB-06MU)
-            widget:
-              type: zigbee2mqtt
-              url: http://zigbee2mqtt.home-automation.svc.cluster.local:8080
         - SLZB-06MU:
             icon: mdi-zigbee
             href: http://192.168.69.20/
