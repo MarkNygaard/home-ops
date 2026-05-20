@@ -102,10 +102,6 @@ data:
             icon: ntfy.svg
             href: https://ntfy.mnygaard.io
             description: Push notifications
-        - Home Assistant:
-            icon: home-assistant.svg
-            href: http://192.168.42.202:8123/dwains-dashboard/home
-            description: Home automation
     - "—":
         - Calendar:
             widget:
@@ -136,6 +132,22 @@ data:
             icon: mdi-spider-web
             href: https://crawl4ai.mnygaard.io
             description: Web crawler playground
+    - Home Automation:
+        - Home Assistant:
+            icon: home-assistant.svg
+            href: http://192.168.42.202:8123/dwains-dashboard/home
+            description: Home automation hub
+        - Zigbee2MQTT:
+            icon: zigbee2mqtt.svg
+            href: https://z2m.mnygaard.io
+            description: ZigBee bridge (SLZB-06MU)
+            widget:
+              type: zigbee2mqtt
+              url: http://zigbee2mqtt.home-automation.svc.cluster.local:8080
+        - SLZB-06MU:
+            icon: mdi-zigbee
+            href: http://192.168.69.20/
+            description: ZigBee coordinator (admin UI)
     - Productivity:
         - Excalidraw:
             icon: excalidraw.svg
@@ -173,6 +185,8 @@ data:
       "—":
         style: column
       Automation:
+        style: column
+      Home Automation:
         style: column
       Productivity:
         style: column
