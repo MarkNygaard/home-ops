@@ -36,10 +36,11 @@ spec:
               ZIGBEE2MQTT_CONFIG_FRONTEND_PORT: &port 8080
               # First-run safety: don't allow joins until you explicitly enable in UI
               ZIGBEE2MQTT_CONFIG_PERMIT_JOIN: "false"
-              # Generate a random network key on first run and persist it
-              ZIGBEE2MQTT_CONFIG_ADVANCED_NETWORK_KEY: GENERATE
-              # HA integration off (you're building a custom home-automation app)
-              ZIGBEE2MQTT_CONFIG_HOMEASSISTANT_ENABLED: "false"
+              # HA integration on during transition (publishes discovery topics
+              # so HA auto-imports devices). The new Rust app subscribes to the
+              # raw zigbee2mqtt/* topics independently — discovery topics are
+              # additive, no conflict.
+              ZIGBEE2MQTT_CONFIG_HOMEASSISTANT_ENABLED: "true"
               # Availability tracking (lets z2m mark devices online/offline)
               ZIGBEE2MQTT_CONFIG_AVAILABILITY_ENABLED: "true"
             probes:
