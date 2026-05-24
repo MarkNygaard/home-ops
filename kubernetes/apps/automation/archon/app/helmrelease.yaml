@@ -26,11 +26,18 @@ spec:
               DOMAIN: "archon.${SECRET_DOMAIN}"
               PORT: &port 3000
               CLAUDE_BIN_PATH: /app/node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude
-              # PVC-resident pnpm/node/npm/npx live in /home/appuser/.pi/agent/bin
+              # PVC-resident pnpm/node/npm/npx/cargo live in /home/appuser/.pi/agent/bin
               # (see project_archon_pi.md memory). Prepend so Archon's native `type: bash`
               # workflow nodes resolve them — LLM-spawned bash tools inject this dir
               # themselves, but @archon/server's own PATH does not.
               PATH: "/home/appuser/.pi/agent/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin"
+              # Rust/cargo build toolchain — Zig provides cc/ar wrappers at
+              # /home/appuser/.pi/agent/bin/cc since the Archon image has no
+              # native C linker. Tell rustc which linker to invoke for the
+              # default host target.
+              CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: cc
+              CC: cc
+              AR: ar
             probes:
               liveness:
                 enabled: true
