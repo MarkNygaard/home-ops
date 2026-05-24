@@ -16,7 +16,11 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/coleam00/archon
+              # Custom image = upstream coleam00/archon + build-essential
+              # so cargo can link C deps without the Zig cc wrapper hack.
+              # See kubernetes/apps/automation/archon/image/Containerfile
+              # and .github/workflows/archon-image.yaml.
+              repository: ghcr.io/marknygaard/archon
               tag: latest
             envFrom:
               - secretRef:
@@ -31,13 +35,6 @@ spec:
               # workflow nodes resolve them — LLM-spawned bash tools inject this dir
               # themselves, but @archon/server's own PATH does not.
               PATH: "/home/appuser/.pi/agent/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bun-node-fallback-bin"
-              # Rust/cargo build toolchain — Zig provides cc/ar wrappers at
-              # /home/appuser/.pi/agent/bin/cc since the Archon image has no
-              # native C linker. Tell rustc which linker to invoke for the
-              # default host target.
-              CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: cc
-              CC: cc
-              AR: ar
             probes:
               liveness:
                 enabled: true
