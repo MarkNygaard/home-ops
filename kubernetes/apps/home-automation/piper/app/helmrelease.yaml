@@ -1,0 +1,163 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: piper
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: piper
+  interval: 1h
+  values:
+    controllers:
+      piper:
+        initContainers:
+          # Installs piper-tts[http] (the OHF-Voice/piper1-gpl Python pkg) into
+          # /pip-install on the PVC, and downloads voice models into /config.
+          # Idempotent — re-runs are cheap (skips work that's already done).
+          # Voices are fetched at deploy time so the JARVIS model (community-
+          # trained on copyrighted source) never ends up in the home-ops repo.
+          setup:
+            image:
+              repository: docker.io/library/python
+              tag: 3.12-slim
+            command: ["python", "-c"]
+            args:
+              - |
+                import os, sys, subprocess, urllib.request, pathlib
+
+                # 1. Install piper-tts[http] to /pip-install if not present
+                pip_dir = pathlib.Path("/pip-install")
+                pip_dir.mkdir(parents=True, exist_ok=True)
+                if not (pip_dir / "piper").exists():
+                    print("Installing piper-tts[http]...", flush=True)
+                    subprocess.check_call([
+                        sys.executable, "-m", "pip", "install",
+                        "--quiet", "--no-cache-dir",
+                        "--target", str(pip_dir),
+                        "piper-tts[http]",
+                    ])
+                else:
+                    print("piper-tts already installed", flush=True)
+
+                # 2. Download voices to /config
+                voices = pathlib.Path("/config")
+                voices.mkdir(parents=True, exist_ok=True)
+                downloads = [
+                    ("en_GB-alan-medium.onnx",
+                     "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx"),
+                    ("en_GB-alan-medium.onnx.json",
+                     "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json"),
+                    ("jarvis.onnx",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/jarvis.onnx"),
+                    ("jarvis.onnx.json",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/jarvis.onnx.json"),
+                ]
+                for name, url in downloads:
+                    dest = voices / name
+                    if dest.exists() and dest.stat().st_size > 0:
+                        continue
+                    print(f"Downloading {name}...", flush=True)
+                    urllib.request.urlretrieve(url, dest)
+
+                # 3. Summary
+                print("Setup complete. Voice files:", flush=True)
+                for f in sorted(voices.iterdir()):
+                    print(f"  {f.name:40s} {f.stat().st_size:>12} bytes", flush=True)
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 1Gi
+        containers:
+          app:
+            image:
+              repository: docker.io/library/python
+              tag: 3.12-slim
+            env:
+              TZ: Europe/Copenhagen
+              PYTHONPATH: /pip-install
+            command: ["python", "-m", "piper.http_server"]
+            args:
+              - "--host"
+              - "0.0.0.0"
+              - "--port"
+              - "5000"
+              - "--data-dir"
+              - "/config"
+              - "-m"
+              - "en_GB-alan-medium"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /voices
+                    port: &port 5000
+                  initialDelaySeconds: 20
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 60
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      # Primary: in-cluster DNS for pods like Niles to call
+      app:
+        controller: piper
+        ports:
+          http:
+            port: *port
+      # Dev-time: dev box at 192.168.10.173 (Trusted VLAN) can hit this LB
+      # IP. Trusted → Servers is already allowed by existing rule 1 in
+      # NETWORK.md, so no new firewall rule needed.
+      external:
+        controller: piper
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: "192.168.42.17"
+        ports:
+          http:
+            port: *port
+            protocol: TCP
+    persistence:
+      data:
+        existingClaim: piper
+        advancedMounts:
+          piper:
+            setup:
+              - { path: /pip-install, subPath: pip }
+              - { path: /config, subPath: voices }
+            app:
+              - { path: /pip-install, subPath: pip, readOnly: true }
+              - { path: /config, subPath: voices, readOnly: true }
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
