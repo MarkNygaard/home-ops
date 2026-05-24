@@ -43,15 +43,20 @@ spec:
                 # 2. Download voices to /config
                 voices = pathlib.Path("/config")
                 voices.mkdir(parents=True, exist_ok=True)
+                # JARVIS files live under en/en_GB/jarvis/<quality>/ in the HF
+                # repo. Voice ID Piper exposes = filename stem (e.g. "jarvis-
+                # medium"). Starting with medium (~63 MB); flip to jarvis-high
+                # (~114 MB) later if the character feel needs more weight —
+                # config-only change, no code.
                 downloads = [
                     ("en_GB-alan-medium.onnx",
                      "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx"),
                     ("en_GB-alan-medium.onnx.json",
                      "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json"),
-                    ("jarvis.onnx",
-                     "https://huggingface.co/jgkawell/jarvis/resolve/main/jarvis.onnx"),
-                    ("jarvis.onnx.json",
-                     "https://huggingface.co/jgkawell/jarvis/resolve/main/jarvis.onnx.json"),
+                    ("jarvis-medium.onnx",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx"),
+                    ("jarvis-medium.onnx.json",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx.json"),
                 ]
                 for name, url in downloads:
                     dest = voices / name
