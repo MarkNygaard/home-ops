@@ -1,0 +1,21 @@
+# Custom Archon image with a real C toolchain (gcc + libc dev headers).
+#
+# Upstream ghcr.io/coleam00/archon ships zero C toolchain, which breaks any
+# cargo build that links system C libs (openssl-sys, sqlx, ring, rocksdb,
+# etc.). Pre-baking build-essential here means the in-container `cc` is
+# /usr/bin/gcc, so Rust's default GNU target triples Just Work — no per-run
+# wrapper scripts, no Zig.
+#
+# Renovate's `dockerfile` manager tracks the FROM line below.
+
+FROM ghcr.io/coleam00/archon:latest
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+USER appuser
