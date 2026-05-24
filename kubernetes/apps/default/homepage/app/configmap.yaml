@@ -124,6 +124,10 @@ data:
             icon: mdi-robot
             href: https://agent.mnygaard.io
             description: Autonomous cluster operator
+        - Archon:
+            icon: mdi-brain
+            href: https://archon.mnygaard.io
+            description: Agent workflow orchestrator
         - n8n:
             icon: n8n.svg
             href: https://n8n.mnygaard.io
@@ -150,6 +154,10 @@ data:
             icon: excalidraw.svg
             href: https://excalidraw.mnygaard.io
             description: Whiteboard
+        - IT Tools:
+            icon: mdi-tools
+            href: https://it-tools.mnygaard.io
+            description: Dev/IT utilities (Base64, JWT, regex, etc.)
     - Infrastructure:
         - Authentik:
             icon: authentik.svg
