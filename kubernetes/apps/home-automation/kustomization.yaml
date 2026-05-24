@@ -9,4 +9,5 @@ components:
 resources:
   - ./namespace.yaml
   - ./mosquitto/ks.yaml
+  - ./piper/ks.yaml
   - ./zigbee2mqtt/ks.yaml
