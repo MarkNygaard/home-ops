@@ -6,9 +6,11 @@
 # /usr/bin/gcc, so Rust's default GNU target triples Just Work — no per-run
 # wrapper scripts, no Zig.
 #
-# Renovate's `dockerfile` manager tracks the FROM line below.
+# Upstream only publishes :latest (no per-release tags — see archon.diy
+# Docker docs). We digest-pin so builds are reproducible; Renovate's
+# `dockerfile` manager auto-bumps the digest when :latest moves.
 
-FROM ghcr.io/coleam00/archon:v0.3.12
+FROM ghcr.io/coleam00/archon:latest@sha256:17e6d0d53ad71100523f8fa4284008e40026a34604f1cc95d53e8ddc716298eb
 
 USER root
 RUN apt-get update \
