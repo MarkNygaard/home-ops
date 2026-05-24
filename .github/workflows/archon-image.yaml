@@ -12,11 +12,6 @@ on:
     paths:
       - "kubernetes/apps/automation/archon/image/**"
       - ".github/workflows/archon-image.yaml"
-  schedule:
-    # Weekly rebuild to pick up upstream :latest drift while the FROM tag
-    # remains pinned to :latest. Once we move to a real upstream tag the
-    # schedule can be dropped — Renovate will own bumps.
-    - cron: "0 3 * * 0"
   workflow_dispatch:
 
 concurrency:
