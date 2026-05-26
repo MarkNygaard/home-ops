@@ -27,7 +27,7 @@ spec:
               tag: stable-9909
             env:
               TZ: Europe/Copenhagen
-              PUBLIC_URL: "https://jitsi.${SECRET_DOMAIN}"
+              PUBLIC_URL: "https://meet.${SECRET_DOMAIN}"
               # Disable auth — anyone with the link can join (user's choice)
               ENABLE_AUTH: "0"
               ENABLE_GUESTS: "1"
@@ -233,7 +233,7 @@ spec:
           gatus.home-operations.com/enabled: "true"
           gatus.home-operations.com/name: jitsi-meet
         hostnames:
-          - "jitsi.${SECRET_DOMAIN}"
+          - "meet.${SECRET_DOMAIN}"
         parentRefs:
           - name: envoy-external
             namespace: network

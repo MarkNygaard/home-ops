@@ -158,6 +158,10 @@ data:
             icon: mdi-tools
             href: https://it-tools.mnygaard.io
             description: Dev/IT utilities (Base64, JWT, regex, etc.)
+        - Jitsi Meet:
+            icon: jitsi-meet.svg
+            href: https://meet.mnygaard.io
+            description: Self-hosted video conferencing
     - Infrastructure:
         - Authentik:
             icon: authentik.svg
