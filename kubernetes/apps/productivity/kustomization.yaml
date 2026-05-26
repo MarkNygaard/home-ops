@@ -10,3 +10,4 @@ resources:
   - ./namespace.yaml
   - ./excalidraw/ks.yaml
   - ./it-tools/ks.yaml
+  - ./jitsi-meet/ks.yaml
