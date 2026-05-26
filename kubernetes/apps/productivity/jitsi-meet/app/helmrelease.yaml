@@ -40,8 +40,12 @@ spec:
               XMPP_RECORDER_DOMAIN: &xmpp_recorder_domain recorder.meet.jitsi
               # Prosody service in cluster — bjw-s names secondary services
               # <release>-<key>, so service "prosody" → "jitsi-meet-prosody".
-              XMPP_SERVER: &xmpp_server jitsi-meet-prosody
-              XMPP_BOSH_URL_BASE: http://jitsi-meet-prosody:5280
+              # Use FQDN: nginx (in web container) queries CoreDNS directly
+              # and doesn't honor /etc/resolv.conf search lists. Java
+              # components (jicofo, jvb) use glibc resolver so the short
+              # name works for them too via the FQDN.
+              XMPP_SERVER: &xmpp_server jitsi-meet-prosody.productivity.svc.cluster.local
+              XMPP_BOSH_URL_BASE: http://jitsi-meet-prosody.productivity.svc.cluster.local:5280
               # Component users (passwords come from envFrom secret below)
               JICOFO_AUTH_USER: &jicofo_auth_user focus
               JVB_AUTH_USER: &jvb_auth_user jvb
