@@ -41,7 +41,7 @@ spec:
               # Prosody service in cluster — bjw-s names secondary services
               # <release>-<key>, so service "prosody" → "jitsi-meet-prosody".
               XMPP_SERVER: &xmpp_server jitsi-meet-prosody
-              XMPP_BOSH_URL_BASE: &xmpp_bosh_url_base http://jitsi-meet-prosody:5280
+              XMPP_BOSH_URL_BASE: http://jitsi-meet-prosody:5280
               # Component users (passwords come from envFrom secret below)
               JICOFO_AUTH_USER: &jicofo_auth_user focus
               JVB_AUTH_USER: &jvb_auth_user jvb
@@ -238,3 +238,9 @@ spec:
           - name: envoy-external
             namespace: network
             sectionName: https
+        # Multi-service HelmRelease — bjw-s can't auto-detect which service
+        # to route to. Point explicitly at the web "app" service.
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: http
