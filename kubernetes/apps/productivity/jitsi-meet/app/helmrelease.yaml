@@ -1,0 +1,246 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jitsi-meet
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: jitsi-meet
+  interval: 1h
+  values:
+    # Shared XMPP/component env across all four controllers.
+    # We DRY these into a YAML anchor on the web controller and reference it
+    # from prosody/jicofo/jvb. Anchors live inside controllers.web.containers.app.env.
+    controllers:
+      # ────────────────────────────────────────────────────────────────────
+      # WEB — nginx + Jitsi Meet frontend. Receives HTTPS from envoy-external,
+      # serves UI, proxies signaling (BOSH/WebSocket) to prosody.
+      # ────────────────────────────────────────────────────────────────────
+      web:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: jitsi/web
+              tag: stable-9909
+            env:
+              TZ: Europe/Copenhagen
+              PUBLIC_URL: "https://meet.${SECRET_DOMAIN}"
+              # Disable auth — anyone with the link can join (user's choice)
+              ENABLE_AUTH: "0"
+              ENABLE_GUESTS: "1"
+              # XMPP topology (matches docker-jitsi-meet defaults)
+              XMPP_DOMAIN: &xmpp_domain meet.jitsi
+              XMPP_AUTH_DOMAIN: &xmpp_auth_domain auth.meet.jitsi
+              XMPP_GUEST_DOMAIN: &xmpp_guest_domain guest.meet.jitsi
+              XMPP_MUC_DOMAIN: &xmpp_muc_domain muc.meet.jitsi
+              XMPP_INTERNAL_MUC_DOMAIN: &xmpp_internal_muc_domain internal-muc.meet.jitsi
+              XMPP_RECORDER_DOMAIN: &xmpp_recorder_domain recorder.meet.jitsi
+              # Prosody service in cluster — bjw-s names secondary services
+              # <release>-<key>, so service "prosody" → "jitsi-meet-prosody".
+              XMPP_SERVER: &xmpp_server jitsi-meet-prosody
+              XMPP_BOSH_URL_BASE: http://jitsi-meet-prosody:5280
+              # Component users (passwords come from envFrom secret below)
+              JICOFO_AUTH_USER: &jicofo_auth_user focus
+              JVB_AUTH_USER: &jvb_auth_user jvb
+              JVB_BREWERY_MUC: &jvb_brewery_muc jvbbrewery
+              # Disable the web image's built-in HTTPS — envoy terminates TLS
+              DISABLE_HTTPS: "1"
+            envFrom:
+              - secretRef:
+                  name: jitsi-meet-secret
+            probes:
+              liveness: &web_probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &web_port 80
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *web_probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false  # nginx image writes to /var/cache
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+      # ────────────────────────────────────────────────────────────────────
+      # PROSODY — XMPP server. Internal-only. Other components connect to it
+      # at jitsi-meet-prosody:5222 (S2S), :5347 (component), :5280 (BOSH).
+      # ────────────────────────────────────────────────────────────────────
+      prosody:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: jitsi/prosody
+              tag: stable-9909
+            env:
+              TZ: Europe/Copenhagen
+              XMPP_DOMAIN: *xmpp_domain
+              XMPP_AUTH_DOMAIN: *xmpp_auth_domain
+              XMPP_GUEST_DOMAIN: *xmpp_guest_domain
+              XMPP_MUC_DOMAIN: *xmpp_muc_domain
+              XMPP_INTERNAL_MUC_DOMAIN: *xmpp_internal_muc_domain
+              XMPP_RECORDER_DOMAIN: *xmpp_recorder_domain
+              JICOFO_AUTH_USER: *jicofo_auth_user
+              JVB_AUTH_USER: *jvb_auth_user
+              JVB_BREWERY_MUC: *jvb_brewery_muc
+              # Internal-MUC modules let jicofo discover JVB instances
+              PROSODY_S2S_REQUIRE_ENCRYPTION: "false"
+            envFrom:
+              - secretRef:
+                  name: jitsi-meet-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false  # writes to /config on startup
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+      # ────────────────────────────────────────────────────────────────────
+      # JICOFO — Conference focus. No service needed; outbound to prosody only.
+      # ────────────────────────────────────────────────────────────────────
+      jicofo:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: jitsi/jicofo
+              tag: stable-9909
+            env:
+              TZ: Europe/Copenhagen
+              ENABLE_AUTH: "0"
+              XMPP_DOMAIN: *xmpp_domain
+              XMPP_AUTH_DOMAIN: *xmpp_auth_domain
+              XMPP_INTERNAL_MUC_DOMAIN: *xmpp_internal_muc_domain
+              XMPP_MUC_DOMAIN: *xmpp_muc_domain
+              XMPP_RECORDER_DOMAIN: *xmpp_recorder_domain
+              XMPP_SERVER: *xmpp_server
+              JICOFO_AUTH_USER: *jicofo_auth_user
+              JVB_BREWERY_MUC: *jvb_brewery_muc
+            envFrom:
+              - secretRef:
+                  name: jitsi-meet-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 768Mi
+      # ────────────────────────────────────────────────────────────────────
+      # JVB — Video bridge. Handles all audio/video media via UDP/10000.
+      # Exposed via LoadBalancer on 192.168.42.18 (UDM Pro forwards WAN
+      # UDP/10000 here). Advertises both public IP + LB IP to clients via
+      # JVB_ADVERTISE_IPS (set in secret).
+      # ────────────────────────────────────────────────────────────────────
+      jvb:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: jitsi/jvb
+              tag: stable-9909
+            env:
+              TZ: Europe/Copenhagen
+              XMPP_AUTH_DOMAIN: *xmpp_auth_domain
+              XMPP_INTERNAL_MUC_DOMAIN: *xmpp_internal_muc_domain
+              XMPP_SERVER: *xmpp_server
+              JVB_AUTH_USER: *jvb_auth_user
+              JVB_BREWERY_MUC: *jvb_brewery_muc
+              JVB_PORT: "10000"
+              # Disable TCP harvester — we only forward UDP from UDM Pro
+              JVB_TCP_HARVESTER_DISABLED: "true"
+              # Public STUN so JVB can self-discover its public NAT mapping
+              # if JVB_ADVERTISE_IPS is missing (belt-and-braces).
+              JVB_STUN_SERVERS: meet-jit-si-turnrelay.jitsi.net:443
+            envFrom:
+              - secretRef:
+                  name: jitsi-meet-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false  # jitsi images need to drop to user inside
+        fsGroup: 100
+    # ──────────────────────────────────────────────────────────────────────
+    # Services
+    # ──────────────────────────────────────────────────────────────────────
+    service:
+      # Primary web service — name auto-resolves to "jitsi-meet" (release name).
+      app:
+        controller: web
+        ports:
+          http:
+            port: *web_port
+      # Prosody internal service — name resolves to "jitsi-meet-prosody".
+      prosody:
+        controller: prosody
+        ports:
+          c2s:
+            port: 5222     # client-to-server (legacy clients)
+          component:
+            port: 5347     # internal component port (jicofo)
+          bosh:
+            port: 5280     # BOSH/WebSocket HTTP transport
+      # JVB media service — UDP LoadBalancer for external RTP.
+      jvb:
+        controller: jvb
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: "192.168.42.18"
+        ports:
+          media:
+            port: 10000
+            protocol: UDP
+    # ──────────────────────────────────────────────────────────────────────
+    # HTTPRoute — external access to the web UI via Cloudflare Tunnel.
+    # Signaling (BOSH/WebSocket) goes through the same hostname via paths
+    # /http-bind and /xmpp-websocket, which the nginx in jitsi/web proxies
+    # to prosody internally.
+    # ──────────────────────────────────────────────────────────────────────
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: jitsi-meet
+        hostnames:
+          - "meet.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        # Multi-service HelmRelease — bjw-s can't auto-detect which service
+        # to route to. Point explicitly at the web "app" service.
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: http
