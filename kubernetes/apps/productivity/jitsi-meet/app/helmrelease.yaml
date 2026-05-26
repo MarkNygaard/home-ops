@@ -65,9 +65,11 @@ spec:
                   failureThreshold: 5
               readiness: *web_probes
             securityContext:
+              # Jitsi images need to start as root for the s6-overlay init to
+              # chown /config (and /var/lib/nginx for web). The s6 entrypoint
+              # drops to a less-privileged user before running the service.
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false  # nginx image writes to /var/cache
-              capabilities: {drop: ["ALL"]}
+              readOnlyRootFilesystem: false
             resources:
               requests:
                 cpu: 50m
@@ -105,7 +107,6 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false  # writes to /config on startup
-              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 50m
@@ -140,7 +141,6 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 100m
@@ -180,7 +180,6 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 200m
@@ -189,8 +188,12 @@ spec:
                 memory: 1Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false  # jitsi images need to drop to user inside
-        fsGroup: 100
+        # Jitsi images need to start as root for the s6-overlay init phase.
+        # The s6 entrypoint drops to the service's own user (jicofo, jvb, etc.)
+        # before running the actual service binary.
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
     # ──────────────────────────────────────────────────────────────────────
     # Services
     # ──────────────────────────────────────────────────────────────────────
