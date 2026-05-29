@@ -19,3 +19,4 @@ generatorOptions:
 
 resources:
   - testrun.yaml
+  - secret.sops.yaml

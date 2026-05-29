@@ -1,0 +1,35 @@
+---
+# Git-driven trigger for the inventory-stress-v2 load test — for when you have
+# Git + VPN access but no kubeconfig/kubectl (e.g. working away from home).
+#
+# This Flux Kustomization is intentionally NOT referenced by
+# kubernetes/apps/testing/kustomization.yaml, so simply existing in Git does
+# nothing — the test never fires on a normal push.
+#
+# RUN the test (no kubectl needed):
+#   add this line to kubernetes/apps/testing/kustomization.yaml resources:
+#       - ./k6-operator/testrun/ks.yaml
+#   commit & push. Flux applies the ConfigMap + TestRun and runners start at
+#   PEAK=3000 req/s. Watch in the Flux UI (flux.${SECRET_DOMAIN}) + Grafana.
+#
+# STOP / clean up (and required before re-running):
+#   remove that line, commit & push. prune deletes the TestRun, ConfigMap
+#   and the remote-write Secret.
+#
+# RE-RUN: revert the removal (re-add the line) and push.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: k6-inventory-stress
+spec:
+  dependsOn:
+    - name: k6-operator
+  interval: 1h
+  path: ./kubernetes/apps/testing/k6-operator/testrun
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: testing
+  wait: false
