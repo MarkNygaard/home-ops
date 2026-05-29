@@ -11,3 +11,4 @@ resources:
   - ./excalidraw/ks.yaml
   - ./it-tools/ks.yaml
   - ./jitsi-meet/ks.yaml
+  - ./searxng/ks.yaml

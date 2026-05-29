@@ -1,0 +1,91 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: searxng
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: searxng
+  interval: 1h
+  values:
+    controllers:
+      searxng:
+        annotations:
+          # Bounce the pod when searxng-settings ConfigMap changes.
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/searxng/searxng
+              tag: latest
+            env:
+              TZ: Europe/Copenhagen
+              # The image entrypoint reads this to verify base URL alignment
+              # with what's in settings.yml. Belt-and-braces.
+              SEARXNG_BASE_URL: "https://search.${SECRET_DOMAIN}/"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8080
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        # searxng/searxng image creates and runs as user "searxng" (UID 977).
+        runAsUser: 977
+        runAsGroup: 977
+        fsGroup: 977
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: searxng
+        ports:
+          http:
+            port: *port
+    persistence:
+      settings:
+        type: configMap
+        name: searxng-settings
+        advancedMounts:
+          searxng:
+            app:
+              - path: /etc/searxng/settings.yml
+                subPath: settings.yml
+                readOnly: true
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: searxng
+        hostnames:
+          - "search.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https

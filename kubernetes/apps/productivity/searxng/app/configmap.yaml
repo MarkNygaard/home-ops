@@ -1,0 +1,61 @@
+---
+# SearXNG settings.yml. Mounted into the container at /etc/searxng/settings.yml.
+#
+# `use_default_settings: true` inherits all defaults from the image's built-in
+# settings template (engine list, supported locales, etc.). Only the keys
+# declared below override the defaults.
+#
+# secret_key is committed in plaintext because the file is not SOPS-encrypted
+# (ConfigMaps aren't conventionally SOPS-encrypted in this repo). Rotation is
+# a one-line edit + push. The value here only protects Flask session-cookie
+# integrity for a LAN-only deployment — low blast radius.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-settings
+data:
+  settings.yml: |
+    use_default_settings: true
+
+    general:
+      instance_name: "SearXNG @ mnygaard.io"
+      privacypolicy_url: false
+      donation_url: false
+      contact_url: false
+      enable_metrics: true
+
+    server:
+      secret_key: "acaf34017dace9159f3293523926cf45c486fe58b50ecfa72dd3a6a7152f802c"
+      base_url: "https://search.${SECRET_DOMAIN}/"
+      limiter: true
+      image_proxy: true
+      bind_address: "0.0.0.0"
+      port: 8080
+      method: "GET"
+      default_http_headers:
+        X-Content-Type-Options: nosniff
+        X-Download-Options: noopen
+        X-Robots-Tag: noindex, nofollow
+        Referrer-Policy: no-referrer
+
+    redis:
+      url: "redis://redis.database.svc.cluster.local:6379/0"
+
+    ui:
+      default_locale: "en"
+      query_in_title: true
+      infinite_scroll: false
+      center_alignment: false
+      default_theme: "simple"
+      theme_args:
+        simple_style: "dark"
+
+    search:
+      safe_search: 0
+      autocomplete: "duckduckgo"
+      default_lang: "en"
+      ban_time_on_fail: 5
+      max_ban_time_on_fail: 120
+      formats:
+        - html
+        - json
