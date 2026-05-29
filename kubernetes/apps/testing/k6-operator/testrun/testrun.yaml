@@ -29,7 +29,7 @@ spec:
       file: inventory-stress-v2.js
   runner:
     # Pinned so the experimental-prometheus-rw output name is deterministic.
-    image: grafana/k6:0.59.0
+    image: grafana/k6:2.0.0
     env:
       - name: K6_OUT
         value: experimental-prometheus-rw
