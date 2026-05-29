@@ -9,7 +9,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./k6-operator/ks.yaml
-  # Active load test — one at a time. Merging fires it; revert/remove to stop.
-  # Switch tests by swapping which trigger line is uncommented:
+  # No load test active. To run one, uncomment its trigger and push — merging
+  # fires it; remove the line again to stop and prune the run:
   #   inventory-stress: ./k6-operator/testrun/ks.yaml
-  - ./k6-operator/campaign/ks.yaml
+  #   campaign:         ./k6-operator/campaign/ks.yaml
