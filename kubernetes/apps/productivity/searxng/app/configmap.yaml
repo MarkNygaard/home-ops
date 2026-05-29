@@ -27,7 +27,13 @@ data:
     server:
       secret_key: "acaf34017dace9159f3293523926cf45c486fe58b50ecfa72dd3a6a7152f802c"
       base_url: "https://search.${SECRET_DOMAIN}/"
-      limiter: true
+      # Bot limiter disabled for LAN-only deployment. Re-enabling it requires
+      # a limiter.toml that lists envoy-internal's pod-CIDR as a trusted
+      # proxy AND sets real_ip.x_for=1, so the limiter looks past envoy for
+      # the actual client IP. Without that, SearXNG sees only the envoy hop
+      # and 429s every request with "X-Forwarded-For nor X-Real-IP header is
+      # set".
+      limiter: false
       image_proxy: true
       bind_address: "0.0.0.0"
       port: 8080
@@ -38,7 +44,10 @@ data:
         X-Robots-Tag: noindex, nofollow
         Referrer-Policy: no-referrer
 
-    redis:
+    # SearXNG renamed the config section: redis.url → valkey.url (the
+    # behavior is identical; both still talk to the existing Redis/Valkey
+    # at redis.database.svc.cluster.local:6379).
+    valkey:
       url: "redis://redis.database.svc.cluster.local:6379/0"
 
     ui:
