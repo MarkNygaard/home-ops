@@ -1,0 +1,13 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: k6-operator
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 4.4.1      # appVersion 1.4.0 — https://github.com/grafana/k6-operator/releases
+  url: oci://ghcr.io/grafana/helm-charts/k6-operator
