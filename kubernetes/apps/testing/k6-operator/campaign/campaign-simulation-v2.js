@@ -18,8 +18,12 @@ import { SharedArray } from "k6/data";
 // ============================================================================
 
 const CONFIG = {
-  baseUrl: "https://ca-dev2-dilling-com-api-btawepgjf9egadeq.a01.azurefd.net",
-  storeKey: "dilling-dk",
+  // Injected from the SOPS secret (k6-secrets) via runner env so the dilling
+  // endpoint + store key aren't published in this public repo — a fork can't
+  // decrypt them, so its runners have no valid target. NOT a security boundary
+  // (values remain in git history; lock down dev2 access for that).
+  baseUrl: __ENV.K6_BASE_URL || "",
+  storeKey: __ENV.K6_STORE_KEY || "",
   testId:
     __ENV.TEST_ID || new Date().toISOString().slice(0, 16).replace("T", "_"),
   cartPoolSize: 1000,
