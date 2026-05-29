@@ -9,6 +9,3 @@ components:
 resources:
   - ./namespace.yaml
   - ./k6-operator/ks.yaml
-  # Activates the inventory-stress-v2 load test (3000 req/s, 5m, dev2).
-  # Remove this line + push to stop and clean up the run.
-  - ./k6-operator/testrun/ks.yaml
