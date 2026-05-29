@@ -1,7 +1,8 @@
 ---
 # Installs the k6-operator (controller + TestRun/PrivateLoadZone CRDs).
-# Actual load tests live in ./testrun and are applied MANUALLY (kubectl apply -k),
-# so a git push never accidentally fires a 2000 req/s run.
+# Actual load tests live in ./testrun and ./campaign and are applied MANUALLY
+# (kubectl apply -k), so a git push never accidentally fires a 2000 req/s run.
+# See kubernetes/apps/testing/kustomization.yaml for the apply commands.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

@@ -1,6 +1,12 @@
 ---
-# Applied MANUALLY (not referenced by the namespace kustomization, so Flux never
-# auto-fires the test):  kubectl apply -k kubernetes/apps/testing/k6-operator/testrun
+# Applied MANUALLY from a workstation with kubectl + age.key:
+#   sops -d secret.sops.yaml | kubectl apply -f -      # one-time / on rotation
+#   kubectl apply -k kubernetes/apps/testing/k6-operator/testrun
+#   kubectl delete -k kubernetes/apps/testing/k6-operator/testrun   # stop
+#
+# secret.sops.yaml is intentionally NOT in resources — plain kustomize can't
+# decrypt SOPS. Apply it via the `sops -d | kubectl apply -f -` pipe so the
+# plaintext never touches disk.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: testing
@@ -19,4 +25,3 @@ generatorOptions:
 
 resources:
   - testrun.yaml
-  - secret.sops.yaml

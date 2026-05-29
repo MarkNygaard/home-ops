@@ -9,7 +9,18 @@ components:
 resources:
   - ./namespace.yaml
   - ./k6-operator/ks.yaml
-  # No load test active. To run one, uncomment its trigger and push — merging
-  # fires it; remove the line again to stop and prune the run:
-  #   inventory-stress: ./k6-operator/testrun/ks.yaml
-  #   campaign:         ./k6-operator/campaign/ks.yaml
+  # Only the operator is Flux-managed. Individual load tests are applied
+  # manually with kubectl from a workstation that has kubeconfig + age.key:
+  #
+  #   # one-time per machine (or after credential rotation): apply the
+  #   # k6 remote-write Secret without writing plaintext to disk
+  #   sops -d kubernetes/apps/testing/k6-operator/<test>/secret.sops.yaml \
+  #     | kubectl apply -f -
+  #
+  #   # run a test (TestRun + ConfigMap)
+  #   kubectl apply  -k kubernetes/apps/testing/k6-operator/testrun
+  #   kubectl apply  -k kubernetes/apps/testing/k6-operator/campaign
+  #
+  #   # stop / clean up
+  #   kubectl delete -k kubernetes/apps/testing/k6-operator/testrun
+  #   kubectl delete -k kubernetes/apps/testing/k6-operator/campaign
