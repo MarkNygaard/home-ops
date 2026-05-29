@@ -20,25 +20,45 @@ spec:
           setup:
             image:
               repository: docker.io/library/python
-              tag: 3.12-slim
+              tag: 3.14-slim
             command: ["python", "-c"]
             args:
               - |
-                import os, sys, subprocess, urllib.request, pathlib
+                import os, sys, shutil, subprocess, urllib.request, pathlib
 
-                # 1. Install piper-tts[http] to /pip-install if not present
+                # 1. Install piper-tts[http] into /pip-install. Detect Python
+                # ABI changes by stamping the minor-version into a marker file
+                # and wiping/reinstalling on mismatch — without this, a Python
+                # image bump silently produces a broken pod (new interpreter
+                # loading old ABI wheels at runtime).
                 pip_dir = pathlib.Path("/pip-install")
                 pip_dir.mkdir(parents=True, exist_ok=True)
-                if not (pip_dir / "piper").exists():
-                    print("Installing piper-tts[http]...", flush=True)
+                target_tag = f"{sys.version_info.major}.{sys.version_info.minor}"
+                marker = pip_dir / ".python-tag"
+                existing_tag = marker.read_text().strip() if marker.exists() else None
+
+                needs_install = existing_tag != target_tag or not (pip_dir / "piper").exists()
+                if needs_install:
+                    if any(pip_dir.iterdir()):
+                        print(
+                            f"Wiping /pip-install (Python {existing_tag or 'unknown'} -> {target_tag})...",
+                            flush=True,
+                        )
+                        for item in pip_dir.iterdir():
+                            if item.is_dir():
+                                shutil.rmtree(item)
+                            else:
+                                item.unlink()
+                    print(f"Installing piper-tts[http] for Python {target_tag}...", flush=True)
                     subprocess.check_call([
                         sys.executable, "-m", "pip", "install",
                         "--quiet", "--no-cache-dir",
                         "--target", str(pip_dir),
                         "piper-tts[http]",
                     ])
+                    marker.write_text(target_tag)
                 else:
-                    print("piper-tts already installed", flush=True)
+                    print(f"piper-tts already installed for Python {target_tag}", flush=True)
 
                 # 2. Download voices to /config
                 voices = pathlib.Path("/config")
@@ -83,7 +103,7 @@ spec:
           app:
             image:
               repository: docker.io/library/python
-              tag: 3.12-slim
+              tag: 3.14-slim
             env:
               TZ: Europe/Copenhagen
               PYTHONPATH: /pip-install
