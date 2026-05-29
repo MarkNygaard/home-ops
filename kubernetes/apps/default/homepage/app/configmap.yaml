@@ -162,6 +162,10 @@ data:
             icon: jitsi-meet.svg
             href: https://meet.mnygaard.io
             description: Self-hosted video conferencing
+        - SearXNG:
+            icon: searxng.svg
+            href: https://search.mnygaard.io
+            description: Privacy-respecting metasearch
     - Infrastructure:
         - Authentik:
             icon: authentik.svg
