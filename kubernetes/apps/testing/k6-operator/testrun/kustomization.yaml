@@ -1,0 +1,21 @@
+---
+# Applied MANUALLY (not referenced by the namespace kustomization, so Flux never
+# auto-fires the test):  kubectl apply -k kubernetes/apps/testing/k6-operator/testrun
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: testing
+
+# Bundle the script and the SKU pool into one ConfigMap. k6-operator mounts the
+# whole ConfigMap into /test/, so the script's open('./inventory-skus.json')
+# resolves. disableNameSuffixHash keeps the name stable for the TestRun ref.
+configMapGenerator:
+  - name: k6-inventory-stress
+    files:
+      - inventory-stress-v2.js
+      - inventory-skus.json
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+  - testrun.yaml

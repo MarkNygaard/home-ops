@@ -1,0 +1,24 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: k6-operator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: k6-operator
+  interval: 1h
+  values:
+    # Install the TestRun / PrivateLoadZone CRDs with the release.
+    installCRDs: true
+    # Deploy into the release namespace (testing) set by Flux targetNamespace,
+    # rather than letting the chart create its own k6-operator-system namespace.
+    namespace:
+      create: false
+    manager:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
