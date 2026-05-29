@@ -19,16 +19,45 @@ spec:
   # execution segments — 4 runners ≈ 750 req/s each at PEAK=3000.
   parallelism: 4
   cleanup: post
+  # PEAK/DURATION go through --env (not runner.env) so the initializer pod and
+  # every runner compute the SAME execution plan — k6-operator segments the
+  # arrival rate from what the initializer reports, so they must match.
+  arguments: --env PEAK=3000 --env DURATION=5m
   script:
     configMap:
       name: k6-inventory-stress
       file: inventory-stress-v2.js
   runner:
+    # Pinned so the experimental-prometheus-rw output name is deterministic.
+    image: grafana/k6:0.55.0
     env:
-      - name: PEAK
-        value: "3000"
-      - name: DURATION
-        value: "5m"
+      # Only runners emit metrics (K6_OUT here, not in arguments, keeps the
+      # initializer's k6 inspect/archive step clean). Results stream to the
+      # dilling Grafana via Prometheus remote write.
+      - name: K6_OUT
+        value: experimental-prometheus-rw
+      - name: K6_PROMETHEUS_RW_SERVER_URL
+        value: https://prometheus.dilling.io/api/v1/write
+      - name: K6_PROMETHEUS_RW_TREND_STATS
+        value: p(90),p(95),p(99),min,max,avg,med
+      - name: K6_PROMETHEUS_RW_PUSH_INTERVAL
+        value: 5s
+      # Distinct per-runner label (see script tags note).
+      - name: K6_RUNNER_ID
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      # Basic-auth creds for the remote-write endpoint — from the SOPS secret.
+      - name: K6_PROMETHEUS_RW_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: k6-prometheus-rw
+            key: K6_PROMETHEUS_RW_USERNAME
+      - name: K6_PROMETHEUS_RW_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: k6-prometheus-rw
+            key: K6_PROMETHEUS_RW_PASSWORD
     resources:
       requests:
         cpu: 500m

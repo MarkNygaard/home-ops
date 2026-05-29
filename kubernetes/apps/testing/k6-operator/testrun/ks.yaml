@@ -13,7 +13,8 @@
 #   PEAK=3000 req/s. Watch in the Flux UI (flux.${SECRET_DOMAIN}) + Grafana.
 #
 # STOP / clean up (and required before re-running):
-#   remove that line, commit & push. prune deletes the TestRun + ConfigMap.
+#   remove that line, commit & push. prune deletes the TestRun, ConfigMap
+#   and the remote-write Secret.
 #
 # RE-RUN: revert the removal (re-add the line) and push.
 apiVersion: kustomize.toolkit.fluxcd.io/v1

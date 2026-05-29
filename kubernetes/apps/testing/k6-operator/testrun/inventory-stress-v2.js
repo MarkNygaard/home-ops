@@ -54,7 +54,10 @@ const PEAK = parseInt(__ENV.PEAK || '3000', 10);
 const DURATION = __ENV.DURATION || '5m';
 
 export const options = {
-  tags: { testid: CONFIG.testId, version: 'v2', endpoint: 'inventory-stress' },
+  // `runner` keeps each distributed runner's Prometheus series distinct so the
+  // 4 runners don't collide on identical labels (duplicate/out-of-order samples)
+  // when remote-writing to the shared endpoint. K6_RUNNER_ID = runner pod name.
+  tags: { testid: CONFIG.testId, version: 'v2', endpoint: 'inventory-stress', runner: __ENV.K6_RUNNER_ID || 'single' },
   scenarios: {
     inventory: {
       executor: 'ramping-arrival-rate',
