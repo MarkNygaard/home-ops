@@ -16,14 +16,8 @@ spec:
         containers:
           app:
             image:
-              # latest-dev (May 2026+) for the newer zigbee-herdsman that fixes
-              # the BuffaloZdo crash on incoming NWK_addr_req broadcasts from
-              # old Hue firmware (specifically Hue Smart Button ROM001 firmware
-              # 2.21.0_r29784 — see feedback memory). Once z2m 2.10.2 stable
-              # ships with the same herdsman, pin back here.
               repository: ghcr.io/koenkk/zigbee2mqtt
-              tag: latest-dev
-              pullPolicy: Always
+              tag: 2.10.1
             envFrom:
               - secretRef:
                   name: zigbee2mqtt-secret
