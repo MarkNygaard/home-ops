@@ -12,3 +12,4 @@ resources:
   - ./crawl4ai/ks.yaml
   - ./home-ops-agent/ks.yaml
   - ./archon/ks.yaml
+  - ./ai-harness/ks.yaml
