@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/ai-harness
-              tag: main-2c64e31
+              tag: main-5ad0b46
             env:
               TZ: Europe/Copenhagen
               HARNESS_HTTP_ADDR: 0.0.0.0:8080
