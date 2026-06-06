@@ -149,6 +149,14 @@ data:
             icon: mdi-zigbee
             href: http://192.168.69.20/
             description: ZigBee coordinator (admin UI)
+        - WLED Living Room Ceiling:
+            icon: wled.svg
+            href: http://wled-livingroom.local/
+            description: Ceiling lightstrip
+        - WLED Living Room TV:
+            icon: wled.svg
+            href: http://wled-tv.local/
+            description: TV lightstrip
     - Productivity:
         - Excalidraw:
             icon: excalidraw.svg
