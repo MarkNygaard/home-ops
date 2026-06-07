@@ -124,10 +124,6 @@ data:
             icon: mdi-robot
             href: https://agent.mnygaard.io
             description: Autonomous cluster operator
-        - Archon:
-            icon: mdi-brain
-            href: https://archon.mnygaard.io
-            description: Agent workflow orchestrator
         - n8n:
             icon: n8n.svg
             href: https://n8n.mnygaard.io
