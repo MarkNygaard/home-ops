@@ -199,11 +199,13 @@ spec:
             "defaults": {
               "color": { "mode": "thresholds" },
               "mappings": [],
+              "min": 0,
+              "max": 100,
               "thresholds": {
                 "steps": [
                   { "color": "green", "value": null },
-                  { "color": "yellow", "value": 60 },
-                  { "color": "red", "value": 80 }
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 85 }
                 ]
               },
               "unit": "celsius"
@@ -809,11 +811,13 @@ spec:
             "defaults": {
               "color": { "mode": "thresholds" },
               "mappings": [],
+              "min": 0,
+              "max": 90,
               "thresholds": {
                 "steps": [
                   { "color": "green", "value": null },
-                  { "color": "yellow", "value": 50 },
-                  { "color": "red", "value": 70 }
+                  { "color": "yellow", "value": 60 },
+                  { "color": "red", "value": 75 }
                 ]
               },
               "unit": "celsius"
