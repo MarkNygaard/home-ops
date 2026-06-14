@@ -13,6 +13,12 @@ spec:
       gatus:
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          resources:
+            requests:
+              cpu: 10m
+            limits:
+              memory: 64Mi
         initContainers:
           gatus-sidecar:
             image:
@@ -21,11 +27,6 @@ spec:
             args:
               - --auto-httproute
               - --enable-httproute
-            resources:
-              requests:
-                cpu: 10m
-              limits:
-                memory: 64Mi
             restartPolicy: Always
         containers:
           app:
