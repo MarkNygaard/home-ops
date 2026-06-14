@@ -98,6 +98,6 @@ spec:
         hostnames:
           - "n8n.${SECRET_DOMAIN}"
         parentRefs:
-          - name: envoy-internal
+          - name: envoy-external
             namespace: network
             sectionName: https
