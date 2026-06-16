@@ -35,6 +35,13 @@ spec:
               WEBHOOK_URL: "https://n8n.${SECRET_DOMAIN}"
               QUEUE_BULL_REDIS_HOST: redis.database.svc.cluster.local
               QUEUE_BULL_REDIS_PORT: "6379"
+              # Let Node use ~1.5 GB of the 2 GB cgroup; PDF/font caches push
+              # heap past the default ~500 MB ceiling and trigger SIGABRT.
+              NODE_OPTIONS: "--max-old-space-size=1536"
+              # Envoy adds X-Forwarded-For; tell n8n's express rate-limiter
+              # to trust exactly one proxy hop so it stops logging
+              # ERR_ERL_UNEXPECTED_X_FORWARDED_FOR on every request.
+              N8N_PROXY_HOPS: "1"
             probes:
               liveness:
                 enabled: true
@@ -66,7 +73,7 @@ spec:
                 cpu: 100m
                 memory: 256Mi
               limits:
-                memory: 1Gi
+                memory: 2Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
