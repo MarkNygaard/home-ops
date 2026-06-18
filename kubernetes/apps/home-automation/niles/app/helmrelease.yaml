@@ -1,0 +1,181 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: niles
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: niles
+  interval: 1h
+  values:
+    controllers:
+      niles:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/marknygaard/niles
+              tag: sha-932bc92
+            args:
+              - serve
+              - --config
+              - /etc/niles/niles.toml
+            env:
+              TZ: Europe/Copenhagen
+            envFrom:
+              - secretRef:
+                  name: niles-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      config-file:
+        type: configMap
+        name: niles
+        globalMounts:
+          - path: /etc/niles/niles.toml
+            subPath: niles.toml
+            readOnly: true
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: niles
+        hostnames:
+          - "niles.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+    configMaps:
+      config:
+        data:
+          niles.toml: |
+            # ConfigMap-managed niles.toml. Secrets are NOT here — credential
+            # field values are env-var *names*, resolved at startup from the
+            # niles-secret Kubernetes Secret.
+
+            [home]
+            name = "MMHome"
+            latitude = 56.19427320276865
+            longitude = 10.199594955503496
+            timezone = "Europe/Copenhagen"
+
+            [mqtt]
+            host = "mosquitto.home-automation.svc.cluster.local"
+            port = 1883
+            username_env = "NILES_MQTT_USERNAME"
+            password_env = "NILES_MQTT_PASSWORD"
+            client_id = "niles"
+
+            [api]
+            bind_address = "0.0.0.0:8080"
+
+            [wyoming]
+            # Wyoming listener stays bound but is not exposed via Service for
+            # now (no voice satellite connected yet). Add a LoadBalancer
+            # service for port 10300 when a satellite comes online.
+            bind_address = "0.0.0.0:10300"
+
+            [stt]
+            api_key_env = "GROQ_API_KEY"
+            language = "en"
+
+            [tts]
+            base_url = "http://piper.home-automation.svc.cluster.local:5000"
+            default_voice = "jarvis-medium"
+
+            [llm]
+            api_key_env = "GROQ_API_KEY"
+
+            [wled]
+            devices = [
+              { name = "living_room/ceiling", topic = "living_room/ceiling" },
+              { name = "living_room/tv_light", topic = "living_room/tv_light" },
+            ]
+
+            [integrations.linear]
+            # Set NILES_LINEAR_API_KEY in niles-secret if/when enabling.
+            api_key_env = "NILES_LINEAR_API_KEY"
+            team = "niles"
+
+            [lighting]
+            morning_start = "05:45"
+            morning_end   = "06:30"
+            sunset_start  = "22:30"
+            sunset_end    = "23:59"
+            night_floor_brightness = 15
+            daytime_brightness     = 100
+
+            [[lighting.color_temp_anchors]]
+            time = "00:00"
+            kelvin = 2000
+
+            [[lighting.color_temp_anchors]]
+            time = "05:45"
+            kelvin = 2000
+
+            [[lighting.color_temp_anchors]]
+            time = "06:30"
+            kelvin = 2700
+
+            [[lighting.color_temp_anchors]]
+            time = "12:00"
+            kelvin = 4500
+
+            [[lighting.color_temp_anchors]]
+            time = "17:00"
+            kelvin = 3500
+
+            [[lighting.color_temp_anchors]]
+            time = "21:30"
+            kelvin = 2700
+
+            [[lighting.color_temp_anchors]]
+            time = "23:00"
+            kelvin = 2000
+
+            [[lighting.color_temp_anchors]]
+            time = "23:59"
+            kelvin = 2000
