@@ -147,6 +147,14 @@ spec:
             sunset_end    = "23:59"
             night_floor_brightness = 15
             daytime_brightness     = 100
+            # Curve pauses Fri noon → Sun noon (weekend evenings stay bright,
+            # Sunday evening dims again for Monday).
+            curve_pause_start = "fri 12:00"
+            curve_pause_end   = "sun 12:00"
+
+            [lighting.morning_routine]
+            fire_days = ["mon", "tue", "wed", "thu", "fri"]
+            # target_devices omitted = all lights
 
             [[lighting.color_temp_anchors]]
             time = "00:00"
