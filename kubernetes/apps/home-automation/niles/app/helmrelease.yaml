@@ -151,10 +151,9 @@ spec:
             # Sunday evening dims again for Monday).
             curve_pause_start = "fri 12:00"
             curve_pause_end   = "sun 12:00"
-
-            [lighting.morning_routine]
-            # fire_days = ["mon", "tue", "wed", "thu", "fri"]
-            # target_devices omitted = all lights
+            # Morning routine intentionally omitted — niles requires
+            # fire_days inside [lighting.morning_routine] when the section
+            # is declared, so disabling means removing the whole section.
 
             [[lighting.color_temp_anchors]]
             time = "00:00"
