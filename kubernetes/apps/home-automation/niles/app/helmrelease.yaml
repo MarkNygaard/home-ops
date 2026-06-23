@@ -48,7 +48,7 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 50m
@@ -153,7 +153,7 @@ spec:
             curve_pause_end   = "sun 12:00"
 
             [lighting.morning_routine]
-            fire_days = ["mon", "tue", "wed", "thu", "fri"]
+            # fire_days = ["mon", "tue", "wed", "thu", "fri"]
             # target_devices omitted = all lights
 
             [[lighting.color_temp_anchors]]
