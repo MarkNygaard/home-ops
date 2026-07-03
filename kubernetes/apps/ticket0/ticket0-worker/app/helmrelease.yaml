@@ -25,6 +25,7 @@ spec:
               NODE_ENV: production
               LOG_LEVEL: info
               AI_SERVICE_URL: http://ticket0-ai.ticket0.svc.cluster.local:8000
+              HELP_CENTER_ALERT_FROM_EMAIL: admin@ticket0.ai
             probes:
               liveness:
                 enabled: true
