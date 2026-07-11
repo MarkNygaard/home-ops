@@ -22,7 +22,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -59,7 +59,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -96,7 +96,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -133,7 +133,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -164,7 +164,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -194,7 +194,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -231,7 +231,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -266,7 +266,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -292,7 +292,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -318,7 +318,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -349,7 +349,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -380,7 +380,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -407,7 +407,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -439,7 +439,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -468,7 +468,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -497,7 +497,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -532,7 +532,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -565,7 +565,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -604,7 +604,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -633,7 +633,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -668,7 +668,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -697,7 +697,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -732,7 +732,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -769,7 +769,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -806,7 +806,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -843,7 +843,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -872,7 +872,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -911,7 +911,7 @@ spec:
           "type": "row"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -937,7 +937,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -963,7 +963,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -998,7 +998,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -1033,7 +1033,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -1062,7 +1062,7 @@ spec:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "datasource": { "type": "prometheus", "uid": "$${datasource}" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
