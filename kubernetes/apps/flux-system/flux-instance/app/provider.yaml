@@ -5,4 +5,4 @@ metadata:
   name: grafana
 spec:
   type: grafana
-  address: http://grafana.monitoring.svc.cluster.local/api/annotations
+  address: http://grafana-service.monitoring.svc.cluster.local/api/annotations
