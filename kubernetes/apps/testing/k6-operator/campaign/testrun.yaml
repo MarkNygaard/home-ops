@@ -28,7 +28,7 @@ spec:
       file: campaign-simulation-v2.js
   runner:
     # Pinned so the experimental-prometheus-rw output name is deterministic.
-    image: grafana/k6:2.1.0
+    image: grafana/k6:2.2.0
     env:
       - name: K6_OUT
         value: experimental-prometheus-rw
