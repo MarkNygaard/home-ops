@@ -21,7 +21,7 @@ spec:
             env:
               TZ: Europe/Copenhagen
               QBT_WEBUI_PORT: &port 8080
-              QBT_TORRENTING_PORT: &torrentPort 48143
+              QBT_TORRENTING_PORT: &torrentPort 9061
               QBT_NETWORK_INTERFACE: tun0
             probes:
               liveness:
