@@ -9,3 +9,4 @@ spec:
     version: v1.13.8
   policy:
     rebootMode: powercycle
+    force: true
