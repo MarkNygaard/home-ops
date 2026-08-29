@@ -6,6 +6,10 @@ metadata:
   labels:
     grafana.internal/instance: grafana
 spec:
+  # Pin Grafana to the version we've been running so grafana-operator upgrades
+  # don't silently jump the underlying Grafana image (5.25 defaults to 13.1.3).
+  # Bump this deliberately when we're ready to move majors.
+  version: "12.3.0"
   config:
     analytics:
       check_for_updates: "false"
