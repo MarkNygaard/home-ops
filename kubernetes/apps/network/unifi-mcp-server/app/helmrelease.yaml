@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/enuno/unifi-mcp-server
-              tag: 0.2.5
+              tag: 0.2.6
             env:
               TZ: Europe/Copenhagen
               UNIFI_API_TYPE: local
