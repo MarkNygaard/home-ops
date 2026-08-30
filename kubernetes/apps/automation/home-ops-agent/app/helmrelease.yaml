@@ -109,6 +109,21 @@ spec:
             - apiGroups: ["metrics.k8s.io"]
               resources: ["pods", "nodes"]
               verbs: ["get", "list"]
+            # Talos diagnostics skill — read-only.
+            # PDBs: explain why a node cannot be drained (usual cause of a
+            # stuck Talos upgrade).
+            - apiGroups: ["policy"]
+              resources: ["poddisruptionbudgets"]
+              verbs: ["get", "list"]
+            # Upgrade Jobs in system-upgrade: read Job conditions, backoff,
+            # container states to explain a Job-level upgrade failure.
+            - apiGroups: ["batch"]
+              resources: ["jobs"]
+              verbs: ["get", "list"]
+            # Tuppr CRs: phase, target version, failedNodes.
+            - apiGroups: ["tuppr.home-operations.com"]
+              resources: ["talosupgrades", "kubernetesupgrades"]
+              verbs: ["get", "list"]
       bindings:
         home-ops-agent:
           type: ClusterRoleBinding
