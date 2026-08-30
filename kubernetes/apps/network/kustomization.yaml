@@ -16,3 +16,4 @@ resources:
   - ./openclaw/ks.yaml
   - ./proxmox/ks.yaml
   - ./unifi-dns/ks.yaml
+  - ./unifi-mcp-server/ks.yaml
