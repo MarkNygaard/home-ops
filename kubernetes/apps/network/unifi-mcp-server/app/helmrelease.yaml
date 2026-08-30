@@ -25,7 +25,13 @@ spec:
               # Self-signed cert on the UDM Pro — verification would need
               # a CA we don't have.
               UNIFI_LOCAL_VERIFY_SSL: "false"
-              MCP_SERVER_TRANSPORT: streamable_http
+              # The README suggests `streamable_http`, but that value passes
+              # the app's own enum validator only to be rejected by the
+              # bundled FastMCP one layer down (which wants `streamable-http`).
+              # Setting `http` here skips that dispatch mismatch — the app
+              # still serves Streamable HTTP on /mcp, just under a different
+              # internal transport name.
+              MCP_SERVER_TRANSPORT: http
               MCP_SERVER_PORT: &port 3000
             envFrom:
               - secretRef:
