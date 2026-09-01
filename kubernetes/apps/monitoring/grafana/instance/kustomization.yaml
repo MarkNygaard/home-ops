@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./grafana.yaml
   - ./grafanadashboard.yaml
+  - ./grafanadashboard-unpoller-client-insights.yaml
   - ./grafanadatasource.yaml
   - ./secret.sops.yaml
   - ./servicemonitor.yaml
