@@ -24,6 +24,9 @@ spec:
               # SQLite file lives on the Volsync-backed PVC — nightly restic
               # snapshot to R2 keeps the ledger recoverable.
               WF_DB_PATH: /data/app.db
+              # With auth enabled, Wealthfolio refuses a wildcard CORS origin.
+              # Pin to the actual hostname served by envoy-internal.
+              WF_CORS_ALLOW_ORIGINS: "https://wealthfolio.${SECRET_DOMAIN}"
             envFrom:
               - secretRef:
                   name: wealthfolio-secret
