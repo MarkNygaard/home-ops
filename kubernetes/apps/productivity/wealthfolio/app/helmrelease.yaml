@@ -27,6 +27,9 @@ spec:
               # With auth enabled, Wealthfolio refuses a wildcard CORS origin.
               # Pin to the actual hostname served by envoy-internal.
               WF_CORS_ALLOW_ORIGINS: "https://wealthfolio.${SECRET_DOMAIN}"
+              # First-party MCP server — same process, /mcp path. After
+              # boot, generate a token in Settings → AI Agent Access.
+              WF_MCP_ENABLED: "true"
             envFrom:
               - secretRef:
                   name: wealthfolio-secret
