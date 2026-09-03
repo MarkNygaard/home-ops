@@ -1,5 +1,9 @@
 ---
-# Distributed load test against the dev2 inventory API.
+# Distributed load test of the inventory API (POST /api/inventories).
+#
+# TARGET: NONE by default — K6_BASE_URL in ./secret.sops.yaml is deliberately
+# blank, so an accidental apply reaches no environment. Pick one explicitly:
+#   arguments: --env PEAK=3000 --env DURATION=5m --env K6_BASE_URL=https://<host>
 #
 # All dilling-specific values (endpoint, store key, Grafana remote-write target
 # + creds) come from the SOPS secret k6-secrets — nothing usable to run this
@@ -31,6 +35,13 @@ spec:
     # Pinned so the experimental-prometheus-rw output name is deterministic.
     image: grafana/k6:2.2.0
     env:
+      # Cluster is IPv4-only (Cilium enable-ipv6=false) but the Azure Front Door
+      # hostname publishes AAAA records alongside A. A runner handed an answer
+      # with no usable A dials IPv6 into a void ("network is unreachable"), and
+      # k6's 5m default DNS cache pins that for the whole run — observed as one
+      # runner failing ~100% of requests. onlyIPv4 prevents it; ttl=1m bounds it.
+      - name: K6_DNS
+        value: "ttl=1m,select=random,policy=onlyIPv4"
       - name: K6_OUT
         value: experimental-prometheus-rw
       - name: K6_PROMETHEUS_RW_TREND_STATS

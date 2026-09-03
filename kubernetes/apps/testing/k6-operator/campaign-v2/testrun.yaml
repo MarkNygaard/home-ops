@@ -1,0 +1,109 @@
+---
+# Campaign simulation v2, product fetch BY KEY (GET /api/products/sku/{sku}).
+#
+# Not comparable with ../campaign — that one fetches by URL and assumes a v1
+# traffic mix. This one uses the route the v2 frontend actually calls and the
+# measured prod mix: PDP 62% / inventory 33% / purchase 4% / cart 1%.
+#
+# modeA (capacity): 15 min, ramps 1000 → 3000 req/s across 5 stages.
+# Other modes via `arguments` below:
+#   MODE=smoke  20 req/s for 20s — pre-flight, pair with K6_CART_POOL=20
+#   MODE=modeB  30 min, 400 → 1200 req/s (campaign-shape ramp, autoscaling)
+#   MODE=modeC  instant 4000 req/s for 5 min, no ramp (cold-start cascade)
+#
+# All dilling-specific values (endpoint, store key, Grafana remote-write target
+# + creds) come from the SOPS secret k6-secrets — nothing usable to run this
+# against dilling lives in this public repo; a fork can't decrypt it.
+#
+# TARGET: NONE by default. K6_BASE_URL in ./secret.sops.yaml is deliberately
+# blank, so an accidental apply reaches no environment — setup() throws. Pick a
+# target explicitly by adding it to the arguments field below, e.g.
+#   arguments: --env MODE=modeC --env K6_BASE_URL=https://<front-door-host>
+# Note the script header still describes prod as its intended target; aiming
+# this at prod is a deliberate act, not the default.
+#
+# The purchase scene creates real anonymous carts wherever it is pointed (lines +
+# addresses). It stops before payment: no orders, no Adyen. There is no CT
+# Subscription on Cart, so nothing reaches Service Bus, Klaviyo or Business
+# Central — the carts are inert clutter that expires with CT cart TTL.
+#
+# setup() runs PER RUNNER: ~180 EAN probes plus a 1000-cart pool, so
+# parallelism 4 ≈ 4000 carts warmed before load starts (setupTimeout 10m is set
+# in the script options).
+#
+# RUN:   kubectl apply  -k kubernetes/apps/testing/k6-operator/campaign-v2
+# STOP:  kubectl delete -k kubernetes/apps/testing/k6-operator/campaign-v2
+# Watch: kubectl get testrun,pods -n testing -w
+# Logs:  kubectl logs -n testing -l k6_cr=campaign-simulation-v2-by-key -f --prefix
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: campaign-simulation-v2-by-key
+  namespace: testing
+spec:
+  parallelism: 4
+  # cleanup: post   # OFF deliberately: remote-write is dead, so pod logs are the only record
+  # MODE via --env so the initializer and every runner compute the same plan
+  # before k6-operator segments the arrival rates.
+  arguments: --env MODE=modeC
+  script:
+    configMap:
+      name: k6-campaign-simulation-by-key
+      file: campaign-simulation-v2-by-key.js
+  runner:
+    # Pinned so the experimental-prometheus-rw output name is deterministic.
+    image: grafana/k6:2.2.0
+    env:
+      # Cluster is IPv4-only (Cilium enable-ipv6=false) but the Azure Front Door
+      # hostname publishes AAAA records alongside A. A runner handed an answer
+      # with no usable A dials IPv6 into a void ("network is unreachable"), and
+      # k6's 5m default DNS cache pins that for the whole run — observed as one
+      # runner failing ~100% of requests. onlyIPv4 prevents it; ttl=1m bounds it.
+      - name: K6_DNS
+        value: "ttl=1m,select=random,policy=onlyIPv4"
+      - name: K6_OUT
+        value: experimental-prometheus-rw
+      - name: K6_PROMETHEUS_RW_TREND_STATS
+        value: p(90),p(95),p(99),min,max,avg,med
+      - name: K6_PROMETHEUS_RW_PUSH_INTERVAL
+        value: 5s
+      # Distinct per-runner label so distributed runners don't collide on
+      # identical Prometheus series.
+      - name: K6_RUNNER_ID
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      # Endpoint, store key, remote-write target + creds — all from the SOPS
+      # secret so none of it is published in this public repo.
+      - name: K6_BASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: k6-secrets
+            key: K6_BASE_URL
+      - name: K6_STORE_KEY
+        valueFrom:
+          secretKeyRef:
+            name: k6-secrets
+            key: K6_STORE_KEY
+      - name: K6_PROMETHEUS_RW_SERVER_URL
+        valueFrom:
+          secretKeyRef:
+            name: k6-secrets
+            key: K6_PROMETHEUS_RW_SERVER_URL
+      - name: K6_PROMETHEUS_RW_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: k6-secrets
+            key: K6_PROMETHEUS_RW_USERNAME
+      - name: K6_PROMETHEUS_RW_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: k6-secrets
+            key: K6_PROMETHEUS_RW_PASSWORD
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "3"
+        memory: 4Gi
