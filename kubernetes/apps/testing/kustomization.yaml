@@ -19,8 +19,8 @@ resources:
   #
   #   # run a test (TestRun + ConfigMap)
   #   kubectl apply  -k kubernetes/apps/testing/k6-operator/testrun
-  #   kubectl apply  -k kubernetes/apps/testing/k6-operator/campaign
+  #   kubectl apply  -k kubernetes/apps/testing/k6-operator/campaign-v2
   #
   #   # stop / clean up
   #   kubectl delete -k kubernetes/apps/testing/k6-operator/testrun
-  #   kubectl delete -k kubernetes/apps/testing/k6-operator/campaign
+  #   kubectl delete -k kubernetes/apps/testing/k6-operator/campaign-v2

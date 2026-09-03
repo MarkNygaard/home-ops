@@ -4,148 +4,116 @@ import { Rate, Trend, Counter } from "k6/metrics";
 import { SharedArray } from "k6/data";
 
 // ============================================================================
-// CAMPAIGN SIMULATION — v2 (dev2)
+// CAMPAIGN SIMULATION — v2, product fetch by SKU (product key)
 //
-// Realistic mixed workload mirroring prod top-endpoint distribution from
-// Sentry (7-day). Weights normalised to v2-relevant endpoints only.
+// Reweighted against measured prod v2 traffic — see SCENARIOS below. Two ways
+// it differs from campaign-simulation-v2.js, so results are NOT comparable:
 //
-// Mode A: fixed 4 replicas (capacity test) — uncomment scenarios.modeA below,
-//         apply terraform to pin replicas, run, then restore terraform
-// Mode B: autoscaling enabled (campaign-shape ramp) — uncomment scenarios.modeB,
-//         normal terraform, longer ramp to test KEDA behaviour
+//  - The product fetch uses GET /api/products/sku/{sku}, the route the v2
+//    frontend actually calls. The deprecated GET /api/products?url=... is gone
+//    (zero prod traffic in the last 24h). By-key skips the per-variant
+//    attribute resolution by-url needed to verify the URL.
+//  - The mix is real: PDP + inventory are ~95% of prod requests, and cart
+//    reads are 1%, not the 50% the old script assumed from v1 data.
 //
-// ONLY ONE MODE AT A TIME. Comment the other.
+// No product or review query is cacheable per-request, so cache behaviour is
+// unchanged — this workload is CT-bound by design.
+//
+// TARGET IS PRODUCTION. The default baseUrl is the prod Front Door, and the
+// pools are prod data. The purchase flow creates real anonymous carts in prod
+// commercetools (lines + addresses); it stops before payment, so no orders and
+// no Adyen calls. There is no CT Subscription on Cart, so nothing reaches
+// Service Bus, Klaviyo or Business Central from these carts — they are inert
+// clutter that expires with CT's cart TTL. Point K6_BASE_URL elsewhere to
+// avoid that.
+//
+// Config comes from env so the same file runs locally and on the k6-operator
+// runners (SOPS-injected K6_BASE_URL / K6_STORE_KEY).
+//
+// Local:   k6 run -e MODE=modeA k6-tests/campaign-simulation-v2-by-key.js
+// Cluster: MODE + K6_BASE_URL + K6_STORE_KEY + K6_RUNNER_ID from the runner
 // ============================================================================
 
+// Pools live beside the script; k6-operator mounts the whole ConfigMap flat
+// into /test/, so these relative paths resolve on the runners too. SharedArray
+// keeps ONE copy per pod instead of one per VU — at 8000 maxVUs an inline array
+// of 4402 EANs would otherwise be duplicated 8000 times.
+//
+// eans.json: CT variant SKUs, used for /api/inventories and AddLine.
+// skus.json: CT product keys, used for the PDP scene.
+const EANS = new SharedArray("eans", function () {
+  return JSON.parse(open("./eans.json"));
+});
+
+const SKUS = new SharedArray("skus", function () {
+  return JSON.parse(open("./skus.json"));
+});
+
 const CONFIG = {
-  // Injected from the SOPS secret (k6-secrets) via runner env so the dilling
-  // endpoint + store key aren't published in this public repo — a fork can't
-  // decrypt them, so its runners have no valid target. NOT a security boundary
-  // (values remain in git history; lock down dev2 access for that).
-  baseUrl: __ENV.K6_BASE_URL || "",
-  storeKey: __ENV.K6_STORE_KEY || "",
+  baseUrl: __ENV.K6_BASE_URL,
+  storeKey: __ENV.K6_STORE_KEY,
   testId:
     __ENV.TEST_ID || new Date().toISOString().slice(0, 16).replace("T", "_"),
-  cartPoolSize: 1000,
-  skus: [
-    "5720588440030",
-    "5720588444083",
-    "5720588496884",
-    "5720588436576",
-    "5720588423149",
-    "5720588423460",
-    "5720588481514",
-    "5720588481521",
-    "5720588481538",
-    "5720588481545",
-    "5720588481552",
-    "5720588436224",
-    "5720588496532",
-    "5720588496563",
-    "5720588496570",
-    "5720588474196",
-    "5720588474202",
-    "5720588474219",
-    "5720588474226",
-    "5720588440863",
-    "5720588440894",
-    "5720588440917",
-    "5720588455706",
-    "5720588455720",
-    "5720588488704",
-    "5720588488711",
-    "5720588488728",
-    "5720588440924",
-    "5720588440931",
-    "5720588440948",
-    "5720588440955",
-    "5720588440962",
-    "5720588440979",
-    "5720588488766",
-    "5720588488773",
-    "5720588488780",
-    "5720588488797",
-    "5720588488810",
-    "5720588489022",
-    "5720588489039",
-    "5720588489046",
-    "5720588489053",
-    "5720588489060",
-    "5720588489077",
-    "5720588488841",
-  ],
-  productUrls: [
-    "/produkt/beanie-i-merinould-fg-0905-0190-725",
-    "/produkt/beanie-i-merinould-fg-9907-0190-265",
-    "/produkt/beanie-i-merinould-fg-9907-0190-999",
-    "/produkt/bluse-i-merinould-med-nordisk-monster-til-maend-fg-9942-0112-076",
-    "/produkt/bluse-i-merinould-til-maend-fg-9927-0412-999",
-    "/produkt/bluse-i-merinould-til-maend-fg-9927-0612-058",
-    "/produkt/bluse-i-merinouldsilke-til-maend-fg-9952-0412-856",
-    "/produkt/bluse-i-merinouldsilke-til-maend-fg-9952-0412-999",
-    "/produkt/bluse-med-lynlaas-i-merinould-til-maend-fg-9927-0315-678",
-    "/produkt/boxershorts-i-bomuld-til-maend-fg-3000-0337-999",
-    "/produkt/cargopants-i-bomuld-til-maend-pg-9987-0155-057",
-    "/produkt/cargopants-i-bomuld-til-maend-pg-9987-0155-278",
-    "/produkt/elefanthue-i-merinould-til-maend-fg-9927-0293-058",
-    "/produkt/elefanthue-i-merinould-til-maend-fg-9927-0293-678",
-    "/produkt/flannelskjorte-i-bomulduld-til-maend-pg-61000-0100-190",
-    "/produkt/flannelskjorte-i-bomulduld-til-maend-pg-61000-0100-198",
-    "/produkt/haettetroje-i-bomuld-til-maend-pg-9987-0118-057",
-    "/produkt/haettetroje-i-bomuld-til-maend-pg-9987-0118-278",
-    "/produkt/haettetroje-i-merinould-til-maend-fg-9927-0218-999",
-    "/produkt/haettetroje-med-lommer-i-merinouldfrotte-til-maend-fg-9925-0318-281",
-    "/produkt/haettetroje-med-lommer-i-merinouldfrotte-til-maend-fg-9925-0318-999",
-    "/produkt/half-zip-jakke-i-merinouldfleece-til-maend-fg-9937-0415-297",
-    "/produkt/half-zip-jakke-i-merinouldfleece-til-maend-fg-9937-0415-597",
-    "/produkt/half-zip-jakke-i-merinouldfleece-til-maend-fg-9937-0415-997",
-    "/produkt/halsedisse-i-merinould-til-maend-fg-9927-0297-058",
-    "/produkt/halsedisse-i-merinould-til-maend-fg-9927-0297-678",
-    "/produkt/jakke-i-merinouldfleece-til-maend-fg-9937-0215-161",
-    "/produkt/jakke-i-merinouldfleece-til-maend-fg-9937-0215-997",
-    "/produkt/jakke-i-merinouldfleece-til-maend-fg-9937-0216-597",
-    "/produkt/klassiske-boksershorts-i-bomuld-til-maend-3-pak-bu-3000-0237-199",
-    "/produkt/klassiske-boxershorts-i-merinould-til-maend-fg-9927-0237-678",
-    "/produkt/klassiske-underbukser-med-gylp-i-bomuld-til-maend-fg-1074-0203-999",
-    "/produkt/lange-boxershorts-med-gylp-i-bomuld-til-maend-fg-1074-0238-999",
-    "/produkt/lange-underbukser-i-merinould-med-nordisk-monster-til-maend-fg-9942-0148-076",
-    "/produkt/lange-underbukser-i-merinould-til-maend-fg-9927-0548-112",
-    "/produkt/lange-underbukser-i-merinould-til-maend-fg-9927-0548-678",
-    "/produkt/lange-underbukser-i-merinould-til-maend-fg-9927-0548-999",
-    "/produkt/pandebaand-i-merinould-til-maend-fg-9927-0195-112",
-    "/produkt/pandebaand-i-merinould-til-maend-fg-9927-0195-678",
-    "/produkt/sweatpants-i-bomuld-til-maend-pg-9987-0255-057",
-    "/produkt/sweatpants-i-bomuld-til-maend-pg-9987-0255-278",
-    "/produkt/sweatpants-i-merinould-til-maend-fg-9931-0155-999",
-    "/produkt/sweatshirt-i-merinould-til-maend-fg-9931-0112-112",
-    "/produkt/sweatshirt-i-merinould-til-maend-fg-9931-0112-999",
-    "/produkt/sweatshirt-i-merinouldfrotte-til-maend-fg-9925-0212-281",
-    "/produkt/sweatshirt-i-merinouldfrotte-til-maend-fg-9925-0212-568",
-    "/produkt/t-shirt-i-bomuld-til-maend-fg-1050-0102-904",
-    "/produkt/t-shirt-i-merinould-til-maend-fg-9916-0102-655",
-    "/produkt/t-shirt-i-merinould-til-maend-fg-9927-0802-678",
-    "/produkt/t-shirt-i-merinould-til-maend-fg-9927-0802-999",
-  ],
+  cartPoolSize: Number(__ENV.K6_CART_POOL || 1000),
+
+  // Max EANs per /api/inventories request — the pool is far bigger than any
+  // real PLP page, so cap the payload instead of slicing the whole pool.
+  inventoryBatchMax: 45,
+
+  // How many EANs setup() probes for AddLine-ability (one request each, once
+  // per runner pod). About 1 in 6 passes, so 180 yields ~30 usable EANs.
+  eanProbeSize: 180,
+
+  // Fresh probe cart every N probes — AddLine returns the whole cart, so a
+  // single cart accumulating 180 lines makes each probe slower than the last.
+  eanProbeCartEvery: 30,
+
+  // Alternative EANs to try per cart line before giving up on it.
+  addLineAttempts: 3,
+  // EANs = CT variant SKUs. Used for /api/inventories and AddLine (the API's
+  // `sku` request field carries the EAN — InventoryGetByVariantsQuery).
+  // Pool lives in ./eans.json — see EANS above.
+  eans: EANS,
+
+  // SKUs = CT product keys, always uppercase in CT. Every product in the live
+  // da-DK sitemap (dk.dilling.com/sitemap/products/sitemap/da-DK_0.xml) — the
+  // key is the last 4 dash segments of the slug. The PDP scene therefore mixes
+  // populated and empty review responses in about the real proportion.
+  // Pool lives in ./skus.json — see SKUS above.
+  skus: SKUS,
 };
 
 // ============================================================================
 // SCENARIOS
 //
-// Traffic mix matching prod Sentry data (v2-relevant subset, normalised):
-//   GetCart           50%  (1.2M/7d, no cache, hits CT directly)
-//   GetInventories    30%  (940K/7d, 120s Redis cache)
-//   GetProductByUrl   15%  (154K/7d, parallel CT calls after recent opt)
-//   Purchase flow      5%  (50K AddLine/7d ≈ 5% of cart reads)
+// Traffic mix measured from prod Prometheus (http_server_request_duration_
+// seconds_count, deployment_environment=Production, 7d to 2026-09-02 —
+// 15.0M requests total), normalised over the storefront routes:
+//
+//   PDP view          62%  products/sku 4.43M/7d + key/{key}/reviews 4.77M/7d.
+//                          Fired together per page view, so one iteration
+//                          batches both — that is what the browser does.
+//   GetInventories    33%  4.85M/7d, 120s Redis cache, L1 bypassed
+//   Purchase flow      4%  lines/addresses/payments ≈ 450K/7d combined
+//   GetCart            1%  176K/7d — the v2 frontend does not poll the cart,
+//                          unlike v1 (this was 50% in the older script)
 //
 // Select mode via MODE env var:
-//   MODE=modeA: capacity test at fixed replicas (15 min, 200 → 800 req/s)
-//   MODE=modeB: campaign-shape ramp with autoscaling (30 min, 200 → 1200 req/s)
-//   MODE=modeC: cold-start cascade — instant 4 → 4000 req/s (5 min, no ramp)
+//   MODE=modeA: capacity test (15 min, 1000 → 3000 req/s)
+//   MODE=modeB: campaign-shape ramp with autoscaling (30 min, 400 → 1200 req/s)
+//   MODE=modeC: cold-start cascade — instant 4000 req/s (5 min, no ramp)
 // ============================================================================
 
-const MODE = __ENV.MODE || "modeA";
+const MODE = __ENV.MODE || "modeC";
 
 const PROFILES = {
+  // Pre-flight: proves every scene and both pools work before committing to a
+  // real run. Pair with a small pool: MODE=smoke -e K6_CART_POOL=20
+  smoke: {
+    peak: 20,
+    stages: [20],
+    stageDuration: "20s",
+  },
   modeA: {
     peak: 3000,
     stages: [1000, 1500, 2000, 3000, 3000],
@@ -157,7 +125,7 @@ const PROFILES = {
     stageDuration: "5m",
   },
   // modeC: simulates the 2025/2026 prod cascade pattern. No ramp — k6 fires
-  // 1200 req/s immediately against a cold cluster sitting at min replicas.
+  // 4000 req/s immediately against a cold cluster sitting at min replicas.
   // Tests KEDA reactivity + cold-start latency + Front Door queue behaviour
   // under the actual failure mode that brought down v1 in prior campaigns.
   modeC: {
@@ -169,7 +137,9 @@ const PROFILES = {
 
 const profile = PROFILES[MODE];
 if (!profile) {
-  throw new Error(`Unknown MODE '${MODE}'. Use MODE=modeA, modeB, or modeC.`);
+  throw new Error(
+    `Unknown MODE '${MODE}'. Use MODE=smoke, modeA, modeB, or modeC.`,
+  );
 }
 
 function rateFor(weight, totalRps) {
@@ -181,6 +151,11 @@ function purchaseIterRate(weight, totalRps) {
   return Math.max(1, Math.round(rateFor(weight, totalRps) / 12));
 }
 
+function pdpIterRate(weight, totalRps) {
+  // 1 PDP iteration = 2 batched requests (product + reviews)
+  return Math.max(1, Math.round(rateFor(weight, totalRps) / 2));
+}
+
 function buildStages(weight, mapper) {
   return profile.stages.map((rps) => ({
     duration: profile.stageDuration,
@@ -188,10 +163,10 @@ function buildStages(weight, mapper) {
   }));
 }
 
-const W_CART = 0.5;
-const W_INVENTORY = 0.3;
-const W_PRODUCT = 0.15;
-const W_PURCHASE = 0.05;
+const W_PDP = 0.62;
+const W_INVENTORY = 0.33;
+const W_PURCHASE = 0.04;
+const W_CART = 0.01;
 
 const firstStageRps = profile.stages[0];
 
@@ -201,7 +176,7 @@ export const options = {
     version: "v2",
     endpoint: "campaign-simulation",
     mode: MODE,
-    // Distinct per-runner label so the distributed runners don't collide on
+    // Distinct per-runner label so distributed runners don't collide on
     // identical Prometheus series (K6_RUNNER_ID = runner pod name).
     runner: __ENV.K6_RUNNER_ID || "single",
   },
@@ -211,8 +186,8 @@ export const options = {
       exec: "sceneGetCart",
       timeUnit: "1s",
       startRate: rateFor(W_CART, firstStageRps),
-      preAllocatedVUs: 200,
-      maxVUs: 6000,
+      preAllocatedVUs: 30,
+      maxVUs: 1000,
       stages: buildStages(W_CART, rateFor),
     },
     inventory: {
@@ -224,14 +199,14 @@ export const options = {
       maxVUs: 4000,
       stages: buildStages(W_INVENTORY, rateFor),
     },
-    product: {
+    pdp: {
       executor: "ramping-arrival-rate",
-      exec: "sceneGetProductByUrl",
+      exec: "scenePdp",
       timeUnit: "1s",
-      startRate: rateFor(W_PRODUCT, firstStageRps),
-      preAllocatedVUs: 100,
-      maxVUs: 4000,
-      stages: buildStages(W_PRODUCT, rateFor),
+      startRate: pdpIterRate(W_PDP, firstStageRps),
+      preAllocatedVUs: 300,
+      maxVUs: 8000,
+      stages: buildStages(W_PDP, pdpIterRate),
     },
     purchase: {
       executor: "ramping-arrival-rate",
@@ -258,6 +233,8 @@ export const options = {
 const cartDuration = new Trend("cart_duration");
 const inventoryDuration = new Trend("inventory_duration");
 const productDuration = new Trend("product_duration");
+const reviewsDuration = new Trend("reviews_duration");
+const pdpDuration = new Trend("pdp_duration");
 const purchaseFlowDuration = new Trend("purchase_flow_duration");
 const createCartDuration = new Trend("create_cart_duration");
 const addLineDuration = new Trend("add_line_duration");
@@ -266,6 +243,7 @@ const deleteLineDuration = new Trend("delete_line_duration");
 const addressDuration = new Trend("address_duration");
 const flowSuccessRate = new Rate("flow_success_rate");
 const setupCartsCreated = new Counter("setup_carts_created");
+const addLineNotActive = new Counter("add_line_not_active");
 
 // ============================================================================
 // HELPERS
@@ -294,32 +272,28 @@ function timed(trend, fn) {
   return result;
 }
 
-// Realistic cart-shape distribution: 70% small (2-4), 25% medium (5-10), 5% impulse (1)
-function pickLineCount() {
-  const r = Math.random();
-  if (r < 0.05) {
-    return 1;
-  }
-  if (r < 0.75) {
-    return randomInt(2, 4);
-  }
-  return randomInt(5, 10);
-}
-
 // ============================================================================
 // SETUP — generate 1000 empty carts in parallel batches
 // ============================================================================
 
 export function setup() {
+  if (!CONFIG.baseUrl) {
+    throw new Error("No base URL. Set K6_BASE_URL.");
+  }
+
+  if (!CONFIG.storeKey) {
+    throw new Error("No store key. Set K6_STORE_KEY.");
+  }
+
   const startUtc = new Date().toISOString();
   console.log("=".repeat(70));
-  console.log("Campaign Simulation - v2 (dev2)");
+  console.log("Campaign Simulation - v2 (product fetch by SKU)");
   console.log(`Mode:         ${MODE} (peak ${profile.peak} req/s)`);
   console.log(`Test ID:      ${CONFIG.testId}`);
   console.log(`Base URL:     ${CONFIG.baseUrl}`);
   console.log(`Cart pool:    ${CONFIG.cartPoolSize} (empty)`);
-  console.log(`Product URLs: ${CONFIG.productUrls.length}`);
-  console.log(`SKU pool:     ${CONFIG.skus.length}`);
+  console.log(`SKU pool:     ${CONFIG.skus.length} (product keys)`);
+  console.log(`EAN pool:     ${CONFIG.eans.length} (variant SKUs)`);
   console.log(`Start UTC:    ${startUtc}`);
   console.log("Generating cart pool in parallel batches...");
   console.log("=".repeat(70));
@@ -367,11 +341,57 @@ export function setup() {
   }
 
   console.log(`Cart pool ready: ${cartIds.length} carts (${failed} failures)`);
-  return { startUtc, cartIds };
+
+  // `isOrderable` only means the variant has stock — plenty of those products
+  // are not active in this store, and AddLine 404s with
+  // CartAddLineProductNotFoundOrActive. There is no read endpoint that answers
+  // "can this EAN be added", so probe a sample against one throwaway cart and
+  // let the purchase flow use what actually worked.
+  const addableEans = [];
+  const offset = Math.floor(Math.random() * CONFIG.eans.length);
+  let probeCartId = null;
+  for (let i = 0; i < CONFIG.eanProbeSize; i++) {
+    if (i % CONFIG.eanProbeCartEvery === 0) {
+      const probeRes = http.post(`${CONFIG.baseUrl}/api/carts`, null, {
+        headers,
+      });
+      if (probeRes.status !== 200) {
+        break;
+      }
+      probeCartId = JSON.parse(probeRes.body).id;
+    }
+
+    const ean = CONFIG.eans[(offset + i) % CONFIG.eans.length];
+    const res = http.post(
+      `${CONFIG.baseUrl}/api/carts/${probeCartId}/lines`,
+      JSON.stringify({ sku: ean, quantity: 1 }),
+      {
+        headers,
+        tags: { name: "ProbeAddLine" },
+        // A 404 is the expected answer for most probes, so don't let them
+        // count against http_req_failed.
+        responseCallback: http.expectedStatuses(200, 404),
+      },
+    );
+    if (res.status === 200) {
+      addableEans.push(ean);
+    }
+  }
+
+  // null = fall back to the full EANS SharedArray in the scene. Returning
+  // CONFIG.eans here would JSON-serialize 4402 entries into every VU's copy
+  // of setup data, which is exactly what SharedArray exists to avoid.
+  const purchaseEans = addableEans.length >= 5 ? addableEans : null;
+  console.log(
+    `Addable EANs: ${addableEans.length}/${CONFIG.eanProbeSize} probed` +
+      `${addableEans.length < 5 ? " — too few, purchase flow falls back to the full pool" : ""}`,
+  );
+
+  return { startUtc, cartIds, purchaseEans };
 }
 
 // ============================================================================
-// SCENE: GetCart (50% of traffic)
+// SCENE: GetCart (1% of traffic)
 // ============================================================================
 
 export function sceneGetCart(data) {
@@ -386,13 +406,19 @@ export function sceneGetCart(data) {
 }
 
 // ============================================================================
-// SCENE: GetInventories (30% of traffic)
+// SCENE: GetInventories (33% of traffic)
 // ============================================================================
 
 export function sceneGetInventories() {
-  const count = randomInt(1, CONFIG.skus.length);
-  const shuffled = [...CONFIG.skus].sort(() => Math.random() - 0.5);
-  const skus = shuffled.slice(0, count);
+  // Contiguous window from a random offset: O(count) instead of shuffling 500+
+  // entries per iteration, and adjacent EANs are the same product's sizes —
+  // which is what a PLP actually asks for.
+  const count = randomInt(1, CONFIG.inventoryBatchMax);
+  const start = Math.floor(Math.random() * CONFIG.eans.length);
+  const skus = [];
+  for (let i = 0; i < count; i++) {
+    skus.push(CONFIG.eans[(start + i) % CONFIG.eans.length]);
+  }
 
   const response = timed(inventoryDuration, () =>
     http.post(`${CONFIG.baseUrl}/api/inventories`, JSON.stringify({ skus }), {
@@ -404,26 +430,47 @@ export function sceneGetInventories() {
 }
 
 // ============================================================================
-// SCENE: GetProductByUrl (15% of traffic)
+// SCENE: PDP view (62% of traffic — 2 requests per iteration)
+//
+// A real product page fires the product fetch and its review summary together
+// for the same key, so they go out in one batch rather than as two independent
+// scenarios. Neither is cached per-request: the product query hits CT twice
+// (GetByKey + GetByModel) and the review query hits CT once (only the approved-
+// state lookup is cached), so this is the expensive half of the workload.
 // ============================================================================
 
-export function sceneGetProductByUrl() {
-  const url =
-    CONFIG.productUrls[Math.floor(Math.random() * CONFIG.productUrls.length)];
-  const response = timed(productDuration, () =>
-    http.get(`${CONFIG.baseUrl}/api/products?url=${encodeURIComponent(url)}`, {
-      headers: getHeaders(),
-      tags: { name: "GetProductByUrl" },
-    }),
-  );
-  check(response, { "get product ok": (r) => r.status === 200 });
+export function scenePdp() {
+  const sku = randomSku();
+  const headers = getHeaders();
+  const start = Date.now();
+
+  const responses = http.batch([
+    {
+      method: "GET",
+      url: `${CONFIG.baseUrl}/api/products/sku/${sku}`,
+      params: { headers, tags: { name: "GetProductBySku" } },
+    },
+    {
+      method: "GET",
+      url: `${CONFIG.baseUrl}/api/products/key/${sku}/reviews`,
+      params: { headers, tags: { name: "GetProductReviews" } },
+    },
+  ]);
+
+  pdpDuration.add(Date.now() - start);
+  productDuration.add(responses[0].timings.duration);
+  reviewsDuration.add(responses[1].timings.duration);
+
+  check(responses[0], { "get product ok": (r) => r.status === 200 });
+  check(responses[1], { "get reviews ok": (r) => r.status === 200 });
 }
 
 // ============================================================================
-// SCENE: PurchaseFlow (5% of traffic, full anonymous checkout)
+// SCENE: PurchaseFlow (4% of traffic, full anonymous checkout)
 // ============================================================================
 
-export function scenePurchaseFlow() {
+export function scenePurchaseFlow(data) {
+  const eans = data.purchaseEans || EANS;
   const flowStart = Date.now();
 
   // Create cart
@@ -450,17 +497,29 @@ export function scenePurchaseFlow() {
   }
   sleep(0.5);
 
-  // Add 2-5 lines
+  // Add 2-5 lines. A 404 here is CartAddLineProductNotFoundOrActive — the EAN
+  // has stock but its product is not active in this store. Real shoppers never
+  // hit that (they add from a page that exists), so treat it as a bad pick and
+  // try another EAN instead of failing the checkout.
   const lineCount = randomInt(2, 5);
   const lineIds = [];
   for (let i = 0; i < lineCount; i++) {
-    const addRes = timed(addLineDuration, () =>
-      http.post(
-        `${CONFIG.baseUrl}/api/carts/${cartId}/lines`,
-        JSON.stringify({ sku: randomSku(), quantity: 1 }),
-        { headers: getHeaders(), tags: { name: "AddLine" } },
-      ),
-    );
+    let addRes = null;
+    for (let attempt = 0; attempt < CONFIG.addLineAttempts; attempt++) {
+      const ean = eans[Math.floor(Math.random() * eans.length)];
+      addRes = timed(addLineDuration, () =>
+        http.post(
+          `${CONFIG.baseUrl}/api/carts/${cartId}/lines`,
+          JSON.stringify({ sku: ean, quantity: 1 }),
+          { headers: getHeaders(), tags: { name: "AddLine" } },
+        ),
+      );
+      if (addRes.status !== 404) {
+        break;
+      }
+      addLineNotActive.add(1);
+    }
+
     if (addRes.status !== 200) {
       flowSuccessRate.add(false);
       return;
@@ -536,8 +595,8 @@ export function scenePurchaseFlow() {
   sleep(1);
 
   const fullAddress = {
-    firstName: "Michael",
-    lastName: "Sølvsteen",
+    firstName: "Test",
+    lastName: "Testesen",
     streetName: "Sundsvej 62",
     streetNumber: "Nybo",
     postalCode: "7400",
@@ -578,11 +637,16 @@ export function scenePurchaseFlow() {
 // ============================================================================
 
 export function handleSummary(data) {
-  // stdout only — the runner pod FS is ephemeral, and distributed runs emit a
-  // per-runner summary anyway; use pod logs + Grafana for the aggregate view.
-  return {
-    stdout: buildSummary(data),
-  };
+  const out = { stdout: buildSummary(data) };
+
+  // Runner pods have an ephemeral FS and each emits its own per-runner summary,
+  // so only write the JSON when running locally (pod logs + Grafana on cluster).
+  if (!__ENV.K6_RUNNER_ID) {
+    out[`k6-tests/results/campaign-simulation-v2-by-key-${MODE}-results.json`] =
+      JSON.stringify(data);
+  }
+
+  return out;
 }
 
 function buildSummary(data) {
@@ -598,17 +662,20 @@ function buildSummary(data) {
       : 0;
 
   let out = "\n========================================\n";
-  out += "  Campaign Simulation v2 - Performance Summary\n";
+  out += "  Campaign Simulation v2 (by SKU) - Performance Summary\n";
   out += "========================================\n\n";
+  out += `Mode:        ${MODE}\n`;
   out += `Start UTC:   ${startUtc}\n`;
   out += `End UTC:     ${endUtc}\n`;
   out += `Cart pool:   ${cartPoolSize}\n\n`;
 
   const sections = [
-    ["GetCart            (50%)", "cart_duration"],
-    ["GetInventories     (30%)", "inventory_duration"],
-    ["GetProductByUrl    (15%)", "product_duration"],
-    ["PurchaseFlow total ( 5%)", "purchase_flow_duration"],
+    ["PDP view total     (62%)", "pdp_duration"],
+    ["  GetProductBySku      ", "product_duration"],
+    ["  GetProductReviews    ", "reviews_duration"],
+    ["GetInventories     (33%)", "inventory_duration"],
+    ["PurchaseFlow total ( 4%)", "purchase_flow_duration"],
+    ["GetCart            ( 1%)", "cart_duration"],
   ];
   for (const [label, key] of sections) {
     if (m[key]) {
@@ -641,6 +708,9 @@ function buildSummary(data) {
   }
   if (m.flow_success_rate) {
     out += `Purchase flow success: ${(m.flow_success_rate.values.rate * 100).toFixed(2)}%\n`;
+  }
+  if (m.add_line_not_active) {
+    out += `AddLine retries (product not active in store): ${m.add_line_not_active.values.count}\n`;
   }
 
   out += "========================================\n";

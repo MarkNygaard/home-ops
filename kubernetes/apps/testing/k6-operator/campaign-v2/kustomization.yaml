@@ -1,0 +1,30 @@
+---
+# Applied MANUALLY from a workstation with kubectl + age.key:
+#   sops -d secret.sops.yaml | kubectl apply -f -      # one-time / on rotation
+#   kubectl apply -k kubernetes/apps/testing/k6-operator/campaign-v2
+#   kubectl delete -k kubernetes/apps/testing/k6-operator/campaign-v2   # stop
+#
+# secret.sops.yaml is intentionally NOT in resources — plain kustomize can't
+# decrypt SOPS. Apply it via the `sops -d | kubectl apply -f -` pipe so the
+# plaintext never touches disk.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: testing
+
+# Bundle the script and both pools into one ConfigMap. k6-operator mounts the
+# whole ConfigMap flat into /test/, so the script's open('./eans.json') and
+# open('./skus.json') resolve — same pattern as ../testrun.
+# ConfigMap name differs from ../campaign's k6-campaign-simulation so both
+# tests can be applied without clobbering each other.
+configMapGenerator:
+  - name: k6-campaign-simulation-by-key
+    files:
+      - campaign-simulation-v2-by-key.js
+      - eans.json
+      - skus.json
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+  - testrun.yaml
