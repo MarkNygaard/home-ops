@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/home-ops-agent
-              tag: 0.13.1
+              tag: 0.13.2
             envFrom:
               - secretRef:
                   name: home-ops-agent-secret
@@ -31,6 +31,10 @@ spec:
               BASE_URL: "https://agent.${SECRET_DOMAIN}"
               PR_CHECK_INTERVAL_SECONDS: "1800"
               ALERT_COOLDOWN_SECONDS: "900"
+              # Shorter than the PR cycle: this is the loop that notices a node
+              # stranded mid-upgrade, and a cycle is a handful of list calls
+              # rather than an agent run.
+              HEALTH_CHECK_INTERVAL_SECONDS: "600"
               GITHUB_REPO: MarkNygaard/home-ops
             probes:
               liveness: &probes
