@@ -4,9 +4,19 @@ kind: Cluster
 metadata:
   name: postgres
 spec:
-  instances: 1
+  # Two instances so the postgres-primary PDB is satisfiable. With one
+  # instance allowedDisruptions is permanently 0, which blocks every node
+  # drain and has stalled four Talos upgrades in a row. With a replica,
+  # CNPG switches over on eviction and the drain proceeds normally.
+  instances: 2
   imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
   primaryUpdateStrategy: unsupervised
+  # Keep the two instances on separate nodes — local-path PVCs are
+  # node-pinned, so co-locating them would defeat the point.
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
   storage:
     size: 10Gi
     storageClass: local-path
