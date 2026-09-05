@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/home-ops-agent
-              tag: 0.13.1
+              tag: 0.13.2
             envFrom:
               - secretRef:
                   name: home-ops-agent-secret
@@ -31,6 +31,10 @@ spec:
               BASE_URL: "https://agent.${SECRET_DOMAIN}"
               PR_CHECK_INTERVAL_SECONDS: "1800"
               ALERT_COOLDOWN_SECONDS: "900"
+              # Shorter than the PR cycle: this is the loop that notices a node
+              # stranded mid-upgrade, and a cycle is a handful of list calls
+              # rather than an agent run.
+              HEALTH_CHECK_INTERVAL_SECONDS: "600"
               GITHUB_REPO: MarkNygaard/home-ops
             probes:
               liveness: &probes
@@ -123,6 +127,26 @@ spec:
             # Tuppr CRs: phase, target version, failedNodes.
             - apiGroups: ["tuppr.home-operations.com"]
               resources: ["talosupgrades", "kubernetesupgrades"]
+              verbs: ["get", "list"]
+            # Scheduled cluster health check — read-only.
+            # PVs: a Pending pod's PVC resolves to a PV whose nodeAffinity
+            # names the node it is pinned to. That mapping is what turns
+            # "6 pods Pending" into "6 pods stranded because k8s-N is
+            # cordoned" — the correlation is the point of the check.
+            - apiGroups: [""]
+              resources: ["persistentvolumes"]
+              verbs: ["get", "list"]
+            # CNPG Cluster: readyInstances vs instances, and phase. A
+            # degraded database is invisible to the pod-level checks because
+            # the pods stay Running while replication is broken.
+            - apiGroups: ["postgresql.cnpg.io"]
+              resources: ["clusters"]
+              verbs: ["get", "list"]
+            # Volsync ReplicationSource: lastSyncTime. Backups to R2 fail
+            # silently today — nothing alerts when a nightly snapshot stops
+            # happening, which is the worst way to find out.
+            - apiGroups: ["volsync.backube"]
+              resources: ["replicationsources"]
               verbs: ["get", "list"]
       bindings:
         home-ops-agent:
