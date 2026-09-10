@@ -1,0 +1,25 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: harness-registry
+spec:
+  cluster:
+    name: postgres
+  name: harness-registry
+  ensure: present
+  login: true
+  inherit: true
+  # This role is reachable from outside the cluster, so it gets nothing beyond
+  # its own database: no superuser, no CREATEDB, no CREATEROLE. A leaked
+  # registry password must not become a route to authentik or the harness DB.
+  superuser: false
+  createdb: false
+  createrole: false
+  # The registry API is serverless and opens a connection per invocation.
+  # Cap it so a burst can't eat the cluster's 200 max_connections.
+  connectionLimit: 30
+  passwordSecret:
+    name: harness-registry-db-secret
+  # Dropping the CR must not drop the role that owns the data.
+  databaseRoleReclaimPolicy: retain

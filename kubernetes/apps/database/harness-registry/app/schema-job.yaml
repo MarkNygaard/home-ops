@@ -1,0 +1,84 @@
+---
+# Applies resources/schema.sql to the harness-registry database.
+#
+# The SQL is mounted from a hash-suffixed ConfigMap, so editing schema.sql
+# changes this Job's pod spec — and a completed Job's spec is immutable. Bump
+# the `-v1` suffix below in the SAME commit as any schema.sql edit, or Flux
+# will fail the reconcile with an immutable-field error. The old Job object can
+# be deleted by hand once the new one has completed.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: harness-registry-schema-v1
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: harness-registry-schema
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 26
+        runAsGroup: 26
+      containers:
+        - name: psql
+          # Same image the cluster already runs, so psql matches the server
+          # version and the pull is a cache hit on every node.
+          image: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              # CNPG creates the role and database asynchronously after their
+              # CRs are applied, so the first attempts here will legitimately
+              # fail. Wait rather than burning the backoffLimit on a race.
+              i=0
+              until psql -c 'SELECT 1' >/dev/null 2>&1; do
+                i=$((i + 1))
+                if [ "$i" -ge 60 ]; then
+                  echo "harness-registry database not reachable after 5m" >&2
+                  psql -c 'SELECT 1'
+                  exit 1
+                fi
+                echo "waiting for the harness-registry database ($i/60)"
+                sleep 5
+              done
+              psql --variable=ON_ERROR_STOP=1 --file=/schema/schema.sql
+              echo "schema applied"
+          env:
+            - name: PGHOST
+              value: postgres-rw.database.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: harness-registry
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: harness-registry-db-secret
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: harness-registry-db-secret
+                  key: password
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: schema
+          configMap:
+            name: harness-registry-schema

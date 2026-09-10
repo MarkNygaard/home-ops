@@ -1,0 +1,18 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: harness-registry
+spec:
+  cluster:
+    name: postgres
+  name: harness-registry
+  owner: harness-registry
+  ensure: present
+  # gen_random_uuid() is in core PostgreSQL from 13 onwards, so this schema
+  # needs no pgcrypto extension on 16.
+  #
+  # Soft-delete is the registry's whole model (unlisted_at, withdrawn_at,
+  # blocked_at) — nothing here is ever meant to be dropped. Keep the database
+  # even if this CR is removed.
+  databaseReclaimPolicy: retain

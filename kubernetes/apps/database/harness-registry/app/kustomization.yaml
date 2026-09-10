@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./secret.sops.yaml
+  - ./databaserole.yaml
+  - ./database.yaml
+  - ./service.yaml
+  - ./schema-job.yaml
+
+# Hash-suffixed on purpose: a schema.sql edit then changes the schema Job's
+# pod spec, which fails the reconcile loudly instead of silently leaving the
+# already-completed Job in place with stale SQL. See schema-job.yaml.
+configMapGenerator:
+  - name: harness-registry-schema
+    files:
+      - ./resources/schema.sql
