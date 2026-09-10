@@ -8,7 +8,9 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./ghcr-secret.sops.yaml
   - ./n8n/ks.yaml
   - ./crawl4ai/ks.yaml
   - ./home-ops-agent/ks.yaml
   - ./ai-harness/ks.yaml
+  - ./harness-registry/ks.yaml
