@@ -21,7 +21,7 @@ spec:
               # issuance, blocking, the official badge) that has no business
               # shipping inside the open-source harness.
               repository: ghcr.io/marknygaard/harness-registry
-              tag: 0.2.0
+              tag: 0.3.0
             envFrom:
               - secretRef:
                   name: harness-registry-api-secret
@@ -35,6 +35,15 @@ spec:
               # user did not mean to be on.
               CORS_ALLOW_ORIGINS: "https://harness.${SECRET_DOMAIN}"
               MAX_YAML_BYTES: "262144"
+              # Bounds how fast an unauthenticated caller can inflate an
+              # install count, which listings are ordered by. Generous: a
+              # harness records one install per workflow it takes, so a real
+              # client is nowhere near this. In-memory and per-replica, so it
+              # stops casual abuse rather than a distributed one; the other
+              # half of the defence is that only installs seen in the last 90
+              # days are counted, so an inflated figure has to be maintained.
+              INSTALL_RATE_LIMIT: "60"
+              INSTALL_RATE_WINDOW_SECS: "60"
               RUST_LOG: info,harness_registry=debug
             probes:
               # Liveness deliberately hits /healthz, which does not touch
