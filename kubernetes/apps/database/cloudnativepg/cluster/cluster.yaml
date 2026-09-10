@@ -29,32 +29,6 @@ spec:
       maintenance_work_mem: 64MB
     shared_preload_libraries:
       - vectors.so
-    # This cluster is reachable from the internet through the
-    # postgres-registry-lb service (192.168.42.19) and a port-forward on the
-    # UDM Pro, so the trailing `host all all all scram-sha-256` that CNPG
-    # appends by default is too permissive: it would offer authentik, n8n,
-    # ai-harness and every other role to anyone who finds the port.
-    #
-    # CNPG renders pg_hba.conf as FIXED RULES, then these, then that default
-    # (pkg/postgres/configuration.go). The fixed rules carry the local peer
-    # maps and the streaming_replica cert rules, so they come first and
-    # replication, the metrics exporter and the operator are unaffected by
-    # anything below. First match wins, so the closing reject shadows the
-    # default rule and nothing else.
-    pg_hba:
-      # The only role offered to the internet, and only over TLS.
-      - hostssl harness-registry harness-registry all scram-sha-256
-      # In-cluster clients, by pod address.
-      - host all all 10.42.0.0/16 scram-sha-256
-      # Cilium SNATs LoadBalancer traffic to a node address, so LAN clients
-      # arriving via postgres-lb land in the SERVERS VLAN range.
-      - host all all 192.168.42.0/24 scram-sha-256
-      # Workstations, for psql by hand.
-      - host all all 192.168.10.0/24 scram-sha-256
-      - host all all 192.168.1.0/24 scram-sha-256
-      # Anything left reached this cluster from outside as a role that has no
-      # business being outside.
-      - host all all all reject
   bootstrap:
     initdb:
       database: authentik

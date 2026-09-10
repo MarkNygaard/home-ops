@@ -5,7 +5,6 @@ resources:
   - ./secret.sops.yaml
   - ./databaserole.yaml
   - ./database.yaml
-  - ./service.yaml
   - ./schema-job.yaml
 
 # Hash-suffixed on purpose: a schema.sql edit then changes the schema Job's
