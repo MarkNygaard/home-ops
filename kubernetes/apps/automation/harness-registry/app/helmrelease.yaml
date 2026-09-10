@@ -21,7 +21,7 @@ spec:
               # issuance, blocking, the official badge) that has no business
               # shipping inside the open-source harness.
               repository: ghcr.io/marknygaard/harness-registry
-              tag: 0.1.0
+              tag: 0.2.0
             envFrom:
               - secretRef:
                   name: harness-registry-api-secret
