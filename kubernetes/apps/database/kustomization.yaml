@@ -9,5 +9,6 @@ components:
 resources:
   - ./namespace.yaml
   - ./cloudnativepg/ks.yaml
+  - ./harness-registry/ks.yaml
   - ./qdrant/ks.yaml
   - ./redis/ks.yaml
