@@ -1,0 +1,119 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harness-registry
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: harness-registry
+  interval: 1h
+  values:
+    controllers:
+      harness-registry:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              # Private package: built from MarkNygaard/harness-registry, which
+              # is private because it holds registry-operator code (token
+              # issuance, blocking, the official badge) that has no business
+              # shipping inside the open-source harness.
+              repository: ghcr.io/marknygaard/harness-registry
+              tag: 0.3.0
+            envFrom:
+              - secretRef:
+                  name: harness-registry-api-secret
+            env:
+              TZ: Europe/Copenhagen
+              BIND_ADDR: 0.0.0.0:8080
+              # The static site is a different origin, so a browser fetch needs
+              # this. Listed explicitly rather than mirrored: the service's main
+              # clients are harness instances calling server-side, and an
+              # allowlist keeps the write endpoints unreachable from a page the
+              # user did not mean to be on.
+              CORS_ALLOW_ORIGINS: "https://harness.${SECRET_DOMAIN}"
+              MAX_YAML_BYTES: "262144"
+              # Bounds how fast an unauthenticated caller can inflate an
+              # install count, which listings are ordered by. Generous: a
+              # harness records one install per workflow it takes, so a real
+              # client is nowhere near this. In-memory and per-replica, so it
+              # stops casual abuse rather than a distributed one; the other
+              # half of the defence is that only installs seen in the last 90
+              # days are counted, so an inflated figure has to be maintained.
+              INSTALL_RATE_LIMIT: "60"
+              INSTALL_RATE_WINDOW_SECS: "60"
+              RUST_LOG: info,harness_registry=debug
+            probes:
+              # Liveness deliberately hits /healthz, which does not touch
+              # Postgres. A liveness probe that checked the database would
+              # restart this pod every time Postgres was briefly away -- during
+              # a node drain, say -- which is exactly when restarting helps
+              # least. Readiness is what should react to that, by taking the
+              # pod out of the Service until the database is back.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8080
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      # Namespace-local, so this is a copy of the same credential ticket0 uses
+      # rather than a reference to it. See ../../ghcr-secret.sops.yaml.
+      imagePullSecrets:
+        - name: ghcr-login-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: harness-registry
+        hostnames:
+          - "registry.${SECRET_DOMAIN}"
+        parentRefs:
+          # External on purpose, and the only reason this service exists as a
+          # separate program: other people's self-hosted harness instances have
+          # to reach it. Through the Cloudflare Tunnel, which dials outbound,
+          # so there is no forwarded port on the UDM Pro and nothing listening
+          # on the WAN. Postgres itself stays on the LAN.
+          - name: envoy-external
+            namespace: network
+            sectionName: https

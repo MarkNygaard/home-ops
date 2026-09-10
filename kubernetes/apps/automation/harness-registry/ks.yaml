@@ -1,0 +1,25 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: harness-registry-api
+spec:
+  dependsOn:
+    # The database, role and schema. Cross-namespace, so `namespace` is
+    # required -- dependsOn is namespace-scoped and silently never satisfied
+    # without it.
+    - name: harness-registry
+      namespace: database
+  interval: 1h
+  path: ./kubernetes/apps/automation/harness-registry/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: automation
+  wait: false
