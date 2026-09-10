@@ -88,10 +88,11 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
-      # Namespace-local, so this is a copy of the same credential ticket0 uses
-      # rather than a reference to it. See ../../ghcr-secret.sops.yaml.
-      imagePullSecrets:
-        - name: ghcr-login-secret
+      # No imagePullSecret: the package is public, so the pull is anonymous.
+      # It is not merely unnecessary, it was actively breaking the pull --
+      # kubelet uses the configured credential and does not fall back to
+      # anonymous when the registry rejects it, so a dead token turns a public
+      # image into "not found".
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
