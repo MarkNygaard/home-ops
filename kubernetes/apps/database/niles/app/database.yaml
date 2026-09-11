@@ -1,0 +1,26 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: niles
+spec:
+  cluster:
+    name: postgres
+  name: niles
+  # Owned by its own role, and that is the load-bearing part. niles creates and
+  # migrates its own tables at startup, so it needs rights to CREATE TABLE and
+  # to alter what it made. On PostgreSQL 16 the `public` schema is owned by
+  # pg_database_owner, so owning the database is sufficient for that and no
+  # further grants are needed -- verified against harness-registry, whose tables
+  # are owned by its own role rather than by postgres.
+  owner: niles
+  ensure: present
+  # There is deliberately no schema Job here. Pre-creating the tables would
+  # leave niles working against a schema it does not control, and every future
+  # schema change would need a home-ops PR landed before the image expecting it.
+  # The application owns its migrations.
+  #
+  # Retained on CR deletion even though the contents are not precious: the
+  # ConfigMap remains the source of truth for defaults, so losing this costs
+  # tuning rather than configuration. Cheap to keep, irritating to rebuild.
+  databaseReclaimPolicy: retain

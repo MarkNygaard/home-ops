@@ -1,0 +1,30 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: niles
+spec:
+  cluster:
+    name: postgres
+  name: niles
+  ensure: present
+  login: true
+  inherit: true
+  # Owning its own database is the whole grant. Nothing beyond it: a role that
+  # holds light switches has no business being able to reach authentik, the
+  # harness database or the registry, and CREATEDB/CREATEROLE would be a route
+  # out of its own database rather than a capability it needs. Owning the
+  # database already covers CREATE TABLE, which is the only privilege niles
+  # actually asked for.
+  superuser: false
+  createdb: false
+  createrole: false
+  # One long-lived pod with a small pool, reading once at startup and writing
+  # rarely. Far below harness-registry's 30, which is sized for an API opening
+  # a connection per request; a cap this low turns a connection leak into a
+  # niles problem rather than a cluster-wide one.
+  connectionLimit: 10
+  passwordSecret:
+    name: niles-db-secret
+  # Dropping the CR must not drop the role that owns the data.
+  databaseRoleReclaimPolicy: retain
