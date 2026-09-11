@@ -174,7 +174,13 @@ spec:
             language = "en"
 
             [tts]
-            base_url = "http://piper.home-automation.svc.cluster.local:5000"
+            # piper-app, not piper: the app-template Service is named after the
+            # service key, and there is no bare `piper` Service to fall back
+            # to, so the old name was NXDOMAIN rather than a wrong-but-routable
+            # address. The LAN LoadBalancer at .17 is piper-external and is for
+            # clients outside the cluster; in-cluster traffic should not leave
+            # and come back.
+            base_url = "http://piper-app.home-automation.svc.cluster.local:5000"
             default_voice = "jarvis-medium"
 
             [llm]
