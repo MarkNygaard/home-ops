@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-a75b3d7
+              tag: sha-b46c18c
             args:
               - serve
               - --config
@@ -141,8 +141,8 @@ spec:
             team = "niles"
 
             [lighting]
-            morning_start = "05:45"
-            morning_end   = "06:30"
+            morning_start = "05:20"
+            morning_end   = "06:10"
             sunset_start  = "22:30"
             sunset_end    = "23:59"
             night_floor_brightness = 15
