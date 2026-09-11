@@ -67,6 +67,31 @@ spec:
         ports:
           http:
             port: *port
+      # Wyoming, for the hardware voice satellite. A second Service rather
+      # than another port on `app`, so the HTTP API keeps reaching the LAN
+      # only through the gateway and its TLS, instead of also appearing
+      # unencrypted on this address.
+      #
+      # LoadBalancer because the protocol is raw TCP -- line-delimited JSON
+      # headers then binary audio frames -- which an HTTPRoute cannot carry.
+      # That is not only a parsing objection: the gateway's Envoy runs with
+      # proxy-idle-timeout-seconds 60, so a satellite holding an open
+      # connection between wake words would be cut every minute. A plain L4
+      # Service bypasses the proxy entirely and inherits Cilium's conntrack
+      # timeout instead, which defaults to six hours for established TCP.
+      #
+      # The address is pinned, not allocated: the satellite is flashed with a
+      # fixed host and port, so an IP that moved on redeploy would silently
+      # stop working. .19 is the next free address after jitsi-meet-jvb .18.
+      wyoming:
+        controller: niles
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: "192.168.42.19"
+        ports:
+          wyoming:
+            port: 10300
+            protocol: TCP
     persistence:
       config-file:
         type: configMap
@@ -88,6 +113,15 @@ spec:
           - name: envoy-internal
             namespace: network
             sectionName: https
+        # Required now, not optional tidying. app-template only infers the
+        # backend while exactly one Service is defined; with two it cannot
+        # choose, and the route would silently start pointing at the wrong
+        # one -- sending the web UI at the Wyoming port. adguard-home carries
+        # the same explicit block for the same reason.
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
     configMaps:
       config:
         data:
@@ -128,9 +162,11 @@ spec:
             bind_address = "0.0.0.0:8080"
 
             [wyoming]
-            # Wyoming listener stays bound but is not exposed via Service for
-            # now (no voice satellite connected yet). Add a LoadBalancer
-            # service for port 10300 when a satellite comes online.
+            # Reachable on the LAN at 192.168.42.19:10300 via the `wyoming`
+            # LoadBalancer Service above. Internal only: the protocol has no
+            # authentication, so this address must never be given an
+            # HTTPRoute, a tunnel hostname, or any path through
+            # envoy-external.
             bind_address = "0.0.0.0:10300"
 
             [stt]
