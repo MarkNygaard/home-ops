@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-b46c18c
+              tag: sha-4f59ddd
             args:
               - serve
               - --config
@@ -108,6 +108,21 @@ spec:
             username_env = "NILES_MQTT_USERNAME"
             password_env = "NILES_MQTT_PASSWORD"
             client_id = "niles"
+
+            [database]
+            # The NAME of the environment variable, never the DSN itself.
+            # niles rejects a connection string in this field at startup,
+            # which is the right call: a DSN here would put the password in a
+            # ConfigMap, in git, and in the output of the config API. The
+            # variable is delivered from niles-secret, which the helmrelease
+            # pulls whole through envFrom.
+            url_env = "NILES_DATABASE_URL"
+            # Pinned rather than left to the default of 5, so the ceiling is
+            # visible at both ends: the niles role is capped at
+            # connectionLimit 10 in the database namespace, and a future
+            # default above that would fail at connect time under load rather
+            # than anywhere useful.
+            max_connections = 5
 
             [api]
             bind_address = "0.0.0.0:8080"
