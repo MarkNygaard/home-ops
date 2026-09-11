@@ -10,5 +10,6 @@ resources:
   - ./namespace.yaml
   - ./cloudnativepg/ks.yaml
   - ./harness-registry/ks.yaml
+  - ./niles/ks.yaml
   - ./qdrant/ks.yaml
   - ./redis/ks.yaml
