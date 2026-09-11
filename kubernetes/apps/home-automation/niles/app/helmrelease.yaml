@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-b46c18c
+              tag: sha-1dfed29
             args:
               - serve
               - --config
@@ -77,6 +77,18 @@ spec:
             readOnly: true
       tmp:
         type: emptyDir
+      # Writable state: the config overrides that the UI and voice write
+      # through, plus timers, scenes and morning-routine claims — all of
+      # which were in memory only until now and lost on every restart.
+      # local-path is node-local with reclaimPolicy Delete; the ConfigMap
+      # below stays the source of truth for defaults, so losing this
+      # volume costs tuning, not configuration.
+      data:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        globalMounts:
+          - path: /var/lib/niles
     route:
       app:
         annotations:
@@ -139,6 +151,12 @@ spec:
             # Set NILES_LINEAR_API_KEY in niles-secret if/when enabling.
             api_key_env = "NILES_LINEAR_API_KEY"
             team = "niles"
+
+            [persistence]
+            # Backed by the `data` PVC above. Without it, config changes
+            # apply immediately but are lost on restart, and niles says so
+            # at startup and in the config UI.
+            directory = "/var/lib/niles"
 
             [lighting]
             morning_start = "05:20"
