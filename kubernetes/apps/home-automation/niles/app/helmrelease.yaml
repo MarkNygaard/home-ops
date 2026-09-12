@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-643b1d7
+              tag: sha-9deb758
             args:
               - serve
               - --config
@@ -135,6 +135,24 @@ spec:
             latitude = 56.19427320276865
             longitude = 10.199594955503496
             timezone = "Europe/Copenhagen"
+            # Explicit, because the default is imperial and nothing else in
+            # this file would have revealed that. get_weather returned
+            # "units":"imperial" for a home at latitude 56.19 in
+            # Europe/Copenhagen, so a three-word weather question came back as
+            # "59.7 °F ... 10.7 mph ... 0.09 in". The data was right; only the
+            # unit system was wrong, and the LLM faithfully read back whatever
+            # the tool handed it.
+            #
+            # `units` rather than `country = "DK"`: both are accepted here, but
+            # this one says what is meant instead of leaving it to be inferred,
+            # and its only two values are metric and imperial. Verified against
+            # the running binary with `niles config validate` -- the parser
+            # rejects unknown keys outright, so a guessed name would have
+            # CrashLooped the pod rather than being quietly ignored.
+            #
+            # [home] is a boot-reload section, so this takes effect when
+            # reloader restarts the pod, not on the next curve tick.
+            units = "metric"
 
             [mqtt]
             host = "mosquitto.home-automation.svc.cluster.local"
