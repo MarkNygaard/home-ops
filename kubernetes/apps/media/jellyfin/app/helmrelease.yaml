@@ -15,7 +15,11 @@ spec:
           app:
             image:
               repository: jellyfin/jellyfin
-              tag: 12.0
+              # Quoted: YAML parses an unquoted 12.0 as a float and
+              # serialises it back as "12" -- the floating major tag,
+              # which would silently follow every future 12.x release.
+              # 10.11.11 was safe only because two dots make it a string.
+              tag: "12.0"
             env:
               TZ: Europe/Copenhagen
               DOTNET_SYSTEM_IO_DISABLEFILELOCKING: "true"
