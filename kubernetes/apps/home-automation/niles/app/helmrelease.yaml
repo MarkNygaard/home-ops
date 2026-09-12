@@ -187,6 +187,19 @@ spec:
             # envoy-external.
             bind_address = "0.0.0.0:10300"
 
+            # The XVF3800 in the office, identified by source address. This is
+            # what lets a room-less command ("turn off the light") resolve
+            # against the room the satellite is in rather than needing the room
+            # named aloud every time.
+            #
+            # The address must stay pinned for this to keep working: it is a
+            # DHCP lease on the IoT VLAN, and a satellite that moved to a new
+            # address would stop matching this entry and silently lose its room
+            # rather than erroring. Worth a reservation on the UDM Pro.
+            [satellites.office]
+            ip = "192.168.69.188"
+            room = "office"
+
             [stt]
             api_key_env = "GROQ_API_KEY"
             language = "en"
