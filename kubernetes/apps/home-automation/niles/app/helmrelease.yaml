@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-25d7b2d
+              tag: sha-a285651
             args:
               - serve
               - --config
@@ -178,6 +178,38 @@ spec:
 
             [api]
             bind_address = "0.0.0.0:8080"
+
+            # Sign-in for the HTTP API and UI. Values here are environment
+            # variable *names*; the values live in niles-secret and reach the
+            # process through the helmrelease's envFrom.
+            #
+            # The key names in that Secret must be exactly these strings.
+            # envFrom turns every Secret key into an env var of the same name,
+            # and Kubernetes silently skips keys that are not valid identifiers
+            # -- so a hyphenated key like `github-client-id` would be dropped
+            # with only an InvalidVariableNames event to show for it. That
+            # failure is worse than it sounds: with no credentials AND an empty
+            # allowlist, sign-in reports itself off and the API is open. Check
+            # `configured` in /auth/status, not just `enabled`; the two states
+            # are otherwise indistinguishable.
+            #
+            # allowed is deliberately empty at first commit. While nobody is
+            # listed the gate is off, which is how the first person gets in --
+            # so this is signed in on the LAN, through envoy-internal, before
+            # the route is ever pointed at envoy-external. The public DNS record
+            # does not exist until that flip, and GitHub only issues a 302, so
+            # the whole OAuth round trip completes internally against a real
+            # Let's Encrypt certificate.
+            #
+            # Entries match a verified GitHub email address. Use one that will
+            # not change hands -- if a listed address is ever reassigned, its
+            # new owner can verify it on GitHub and sign in here.
+            [auth]
+            github_client_id_env = "NILES_GITHUB_CLIENT_ID"
+            github_client_secret_env = "NILES_GITHUB_CLIENT_SECRET"
+            session_secret_env = "NILES_SESSION_SECRET"
+            api_token_env = "NILES_API_TOKEN"
+            allowed = []
 
             [wyoming]
             # Reachable on the LAN at 192.168.42.19:10300 via the `wyoming`
