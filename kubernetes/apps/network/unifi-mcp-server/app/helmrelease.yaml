@@ -63,6 +63,30 @@ spec:
         type: emptyDir
     route:
       app:
+        annotations:
+          # The default generated check hits / and expects 200, which this app
+          # has never served -- it answers 404 on /, /health, /healthz and
+          # /sse, because it is an MCP server rather than a web app. The check
+          # has been red since deployment while the pod sat Running with zero
+          # restarts for seven days. Nothing was broken; the check was asking
+          # the wrong question.
+          #
+          # Pointed at /mcp, the only path the app actually serves. A bare GET
+          # there is rejected with 406, because MCP streamable HTTP requires an
+          # Accept of application/json plus text/event-stream -- and that 406
+          # is the useful signal: it comes from the MCP handler itself, so it
+          # proves the protocol endpoint is answering rather than merely that
+          # something is listening. If the pod dies Envoy returns 503, and if
+          # the route breaks it returns 404; both fail this condition.
+          #
+          # Asserting 406 rather than driving a real handshake, on purpose. A
+          # POST of initialize would prove more, but it mints an MCP session on
+          # every probe -- 1440 a day at this interval -- and pins the check to
+          # a protocol version that will age out. flux-webhook in the reference
+          # cluster asserts 404 for the same class of reason.
+          gatus.home-operations.com/endpoint: |-
+            url: https://unifi-mcp.${SECRET_DOMAIN}/mcp
+            conditions: ["[STATUS] == 406"]
         hostnames:
           - "unifi-mcp.${SECRET_DOMAIN}"
         parentRefs:
