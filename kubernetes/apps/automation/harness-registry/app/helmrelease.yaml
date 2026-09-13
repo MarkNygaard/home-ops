@@ -107,6 +107,22 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "true"
           gatus.home-operations.com/name: harness-registry
+          # The generated default checks / for 200, which this service does
+          # not serve -- it is an API, and / is a 404. The check has been red
+          # since deployment while the pod ran healthily, with errors=0 on
+          # every failure, meaning the request succeeded and only the
+          # condition did not match.
+          #
+          # /readyz rather than /healthz, and the distinction is the whole
+          # point of having both. /healthz answers as long as the process is
+          # up; /readyz touches Postgres. A liveness probe must not check the
+          # database, because restarting is useless when the database is the
+          # thing that is away -- but a monitor is not a probe and restarts
+          # nothing. What is worth alerting on is the service being unable to
+          # serve, which is exactly what /readyz reports.
+          gatus.home-operations.com/endpoint: |-
+            url: https://registry.${SECRET_DOMAIN}/readyz
+            conditions: ["[STATUS] == 200"]
         hostnames:
           - "registry.${SECRET_DOMAIN}"
         parentRefs:
