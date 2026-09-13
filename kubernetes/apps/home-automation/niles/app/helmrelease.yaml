@@ -110,7 +110,23 @@ spec:
         hostnames:
           - "niles.${SECRET_DOMAIN}"
         parentRefs:
-          - name: envoy-internal
+          # External, now that sign-in is on and every data route answers 401
+          # to an anonymous caller. Reached through the Cloudflare Tunnel,
+          # which dials outbound -- no forwarded port on the UDM Pro and
+          # nothing listening on the WAN.
+          #
+          # This line is the whole exposure. The tunnel publishes a wildcard
+          # (*.mnygaard.io -> envoy-external), so there is no per-hostname
+          # allowlist to add, and external-dns creates the record from this
+          # route. Merging makes it public immediately; there is no staging
+          # step in between.
+          #
+          # Only 8080 goes out. The Wyoming port stays on the LAN as its own
+          # LoadBalancer at 192.168.42.19 with no HTTPRoute -- unreachable
+          # from outside three times over: no port forward, the tunnel cannot
+          # carry raw TCP, and the address is RFC1918. MQTT never leaves the
+          # cluster at all.
+          - name: envoy-external
             namespace: network
             sectionName: https
         # Required now, not optional tidying. app-template only infers the
