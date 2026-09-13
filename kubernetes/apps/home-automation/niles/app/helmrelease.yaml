@@ -173,8 +173,6 @@ spec:
             [mqtt]
             host = "mosquitto.home-automation.svc.cluster.local"
             port = 1883
-            username_env = "NILES_MQTT_USERNAME"
-            password_env = "NILES_MQTT_PASSWORD"
             client_id = "niles"
 
             [database]
@@ -221,10 +219,7 @@ spec:
             # not change hands -- if a listed address is ever reassigned, its
             # new owner can verify it on GitHub and sign in here.
             [auth]
-            github_client_id_env = "NILES_GITHUB_CLIENT_ID"
-            github_client_secret_env = "NILES_GITHUB_CLIENT_SECRET"
             session_secret_env = "NILES_SESSION_SECRET"
-            api_token_env = "NILES_API_TOKEN"
             allowed = []
 
             [wyoming]
@@ -249,7 +244,6 @@ spec:
             room = "office"
 
             [stt]
-            api_key_env = "GROQ_API_KEY"
             language = "en"
 
             [tts]
@@ -263,7 +257,6 @@ spec:
             default_voice = "jarvis-medium"
 
             [llm]
-            api_key_env = "GROQ_API_KEY"
 
             [wled]
             devices = [
@@ -271,10 +264,6 @@ spec:
               { name = "living_room/tv_light", topic = "living_room/tv_light" },
             ]
 
-            [integrations.linear]
-            # Set NILES_LINEAR_API_KEY in niles-secret if/when enabling.
-            api_key_env = "NILES_LINEAR_API_KEY"
-            team = "niles"
 
             [lighting]
             morning_start = "05:20"
