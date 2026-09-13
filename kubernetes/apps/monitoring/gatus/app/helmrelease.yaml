@@ -149,6 +149,57 @@ spec:
                 interval: 1m
                 conditions:
                   - "[CONNECTED] == true"
+              # Resolved through public resolvers on purpose. Every other
+              # check in this file, and every annotation-discovered one,
+              # resolves through AdGuard and k8s-gateway -- so they all pass
+              # whether or not the name exists on the internet.
+              #
+              # That gap cost 36 hours on 2026-09-12: external-dns 1.22.0 tried
+              # to publish A records pointing at the private LoadBalancer
+              # address, Cloudflare refused them, and every externally-routed
+              # hostname went NXDOMAIN. Ownership TXT records survived with no
+              # address record beside them. Nothing alerted, because from inside
+              # the house everything still resolved and answered.
+              #
+              # NXDOMAIN is the specific signal -- not latency, not content.
+              # These records are proxied, so the addresses behind them are
+              # Cloudflare's and change without notice; asserting on the answer
+              # would alarm on a routine edge change. NOERROR means external-dns
+              # published something, which is the whole question.
+              #
+              # Three hostnames from three apps rather than one. They share a
+              # single publisher, so a real failure takes all three at once --
+              # with one check, a per-app cause and a cluster-wide one would
+              # look identical.
+              - name: niles
+                group: external dns
+                url: "1.1.1.1"
+                dns:
+                  query-name: "niles.${SECRET_DOMAIN}"
+                  query-type: "A"
+                interval: 5m
+                conditions:
+                  - "[DNS_RCODE] == NOERROR"
+              - name: authentik
+                group: external dns
+                url: "1.1.1.1"
+                dns:
+                  query-name: "auth.${SECRET_DOMAIN}"
+                  query-type: "A"
+                interval: 5m
+                conditions:
+                  - "[DNS_RCODE] == NOERROR"
+              # Deliberately a different resolver, so a Cloudflare DNS incident
+              # is distinguishable from our records actually being gone.
+              - name: ntfy
+                group: external dns
+                url: "8.8.8.8"
+                dns:
+                  query-name: "ntfy.${SECRET_DOMAIN}"
+                  query-type: "A"
+                interval: 5m
+                conditions:
+                  - "[DNS_RCODE] == NOERROR"
             ui:
               title: Status | Home Ops
               header: Status
