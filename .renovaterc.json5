@@ -31,6 +31,31 @@
   },
   packageRules: [
     {
+      // external-dns 1.22.0 stops honouring
+      // external-dns.alpha.kubernetes.io/target on a Gateway. The
+      // gateway-httproute source falls back to the Gateway's status address
+      // -- 192.168.42.13, a LoadBalancer IP on the SERVERS VLAN -- and
+      // publishes A records pointing at it. Cloudflare refuses them:
+      //
+      //   400 code 9003
+      //   "Target 192.168.42.13 is not allowed for a proxied record."
+      //
+      // Every externally routed hostname then goes NXDOMAIN, because the
+      // ownership TXT records get written while the address records never
+      // land. 1.21.1 reads the annotation and publishes CNAMEs to
+      // external.mnygaard.io, which is what the Cloudflare Tunnel needs.
+      //
+      // This has broken external access twice: 36 hours from 2026-09-12, and
+      // again on 2026-09-13 when Renovate re-proposed the same bump after the
+      // first rollback. Pinning rather than ignoring, so 1.21.x patches still
+      // flow. Remove once upstream honours the annotation again -- verify
+      // before allowing 1.22 or later.
+      description: "Pin external-dns below 1.22.0 (drops Gateway target annotation)",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/external-dns/"],
+      allowedVersions: "<1.22.0",
+    },
+    {
       description: "Override Helmfile Dependency Name",
       matchDatasources: ["docker"],
       matchManagers: ["helmfile"],
