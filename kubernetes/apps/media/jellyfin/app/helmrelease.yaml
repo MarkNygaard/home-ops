@@ -19,7 +19,7 @@ spec:
               # serialises it back as "12" -- the floating major tag,
               # which would silently follow every future 12.x release.
               # 10.11.11 was safe only because two dots make it a string.
-              tag: "12.0"
+              tag: "12.1"
             env:
               TZ: Europe/Copenhagen
               DOTNET_SYSTEM_IO_DISABLEFILELOCKING: "true"
