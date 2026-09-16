@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-c78c296
+              tag: sha-d0f96d2
             args:
               - serve
               - --config
@@ -142,121 +142,35 @@ spec:
       config:
         data:
           niles.toml: |
-            # ConfigMap-managed niles.toml. Secrets are NOT here — credential
-            # field values are env-var *names*, resolved at startup from the
-            # niles-secret Kubernetes Secret.
-
-            [home]
-            name = "MMHome"
-            latitude = 56.19427320276865
-            longitude = 10.199594955503496
-            timezone = "Europe/Copenhagen"
-            # Explicit, because the default is imperial and nothing else in
-            # this file would have revealed that. get_weather returned
-            # "units":"imperial" for a home at latitude 56.19 in
-            # Europe/Copenhagen, so a three-word weather question came back as
-            # "59.7 °F ... 10.7 mph ... 0.09 in". The data was right; only the
-            # unit system was wrong, and the LLM faithfully read back whatever
-            # the tool handed it.
+            # What the app cannot set for itself. Everything else now lives in the
+            # override document in Postgres, written from Settings.
             #
-            # `units` rather than `country = "DK"`: both are accepted here, but
-            # this one says what is meant instead of leaving it to be inferred,
-            # and its only two values are metric and imperial. Verified against
-            # the running binary with `niles config validate` -- the parser
-            # rejects unknown keys outright, so a guessed name would have
-            # CrashLooped the pod rather than being quietly ignored.
-            #
-            # [home] is a boot-reload section, so this takes effect when
-            # reloader restarts the pod, not on the next curve tick.
-            units = "metric"
+            # Credential fields name an environment variable; the values arrive from
+            # niles-secret through envFrom.
 
             [mqtt]
             host = "mosquitto.home-automation.svc.cluster.local"
-            port = 1883
-            client_id = "niles"
 
             [database]
-            # The NAME of the environment variable, never the DSN itself.
-            # niles rejects a connection string in this field at startup,
-            # which is the right call: a DSN here would put the password in a
-            # ConfigMap, in git, and in the output of the config API. The
-            # variable is delivered from niles-secret, which the helmrelease
-            # pulls whole through envFrom.
             url_env = "NILES_DATABASE_URL"
-            # Pinned rather than left to the default of 5, so the ceiling is
-            # visible at both ends: the niles role is capped at
-            # connectionLimit 10 in the database namespace, and a future
-            # default above that would fail at connect time under load rather
-            # than anywhere useful.
+            # The niles role is capped at connectionLimit 10 in the database namespace.
             max_connections = 5
 
-            [api]
-            bind_address = "0.0.0.0:8080"
-
-            # Sign-in for the HTTP API and UI. Values here are environment
-            # variable *names*; the values live in niles-secret and reach the
-            # process through the helmrelease's envFrom.
-            #
-            # The key names in that Secret must be exactly these strings.
-            # envFrom turns every Secret key into an env var of the same name,
-            # and Kubernetes silently skips keys that are not valid identifiers
-            # -- so a hyphenated key like `github-client-id` would be dropped
-            # with only an InvalidVariableNames event to show for it. That
-            # failure is worse than it sounds: with no credentials AND an empty
-            # allowlist, sign-in reports itself off and the API is open. Check
-            # `configured` in /auth/status, not just `enabled`; the two states
-            # are otherwise indistinguishable.
-            #
-            # allowed is deliberately empty at first commit. While nobody is
-            # listed the gate is off, which is how the first person gets in --
-            # so this is signed in on the LAN, through envoy-internal, before
-            # the route is ever pointed at envoy-external. The public DNS record
-            # does not exist until that flip, and GitHub only issues a 302, so
-            # the whole OAuth round trip completes internally against a real
-            # Let's Encrypt certificate.
-            #
-            # Entries match a verified GitHub email address. Use one that will
-            # not change hands -- if a listed address is ever reassigned, its
-            # new owner can verify it on GitHub and sign in here.
             [auth]
+            # The Secret's key must be exactly this string. envFrom silently drops
+            # keys that are not valid identifiers, and with no credentials sign-in
+            # reports itself off and the API is open -- check `configured` in
+            # /auth/status, not just `enabled`.
             session_secret_env = "NILES_SESSION_SECRET"
-            allowed = []
-
-            [wyoming]
-            # Reachable on the LAN at 192.168.42.19:10300 via the `wyoming`
-            # LoadBalancer Service above. Internal only: the protocol has no
-            # authentication, so this address must never be given an
-            # HTTPRoute, a tunnel hostname, or any path through
-            # envoy-external.
-            bind_address = "0.0.0.0:10300"
-
-            # The XVF3800 in the office, identified by source address. This is
-            # what lets a room-less command ("turn off the light") resolve
-            # against the room the satellite is in rather than needing the room
-            # named aloud every time.
-            #
-            # The address must stay pinned for this to keep working: it is a
-            # DHCP lease on the IoT VLAN, and a satellite that moved to a new
-            # address would stop matching this entry and silently lose its room
-            # rather than erroring. Worth a reservation on the UDM Pro.
-            [satellites.office]
-            ip = "192.168.69.188"
-            room = "office"
 
             [stt]
             language = "en"
 
             [tts]
-            # piper-app, not piper: the app-template Service is named after the
-            # service key, and there is no bare `piper` Service to fall back
-            # to, so the old name was NXDOMAIN rather than a wrong-but-routable
-            # address. The LAN LoadBalancer at .17 is piper-external and is for
-            # clients outside the cluster; in-cluster traffic should not leave
-            # and come back.
+            # piper-app, not piper: there is no bare `piper` Service, so the short
+            # name resolves to nothing rather than to something wrong.
             base_url = "http://piper-app.home-automation.svc.cluster.local:5000"
             default_voice = "jarvis-medium"
-
-            [llm]
 
             [wled]
             devices = [
@@ -264,22 +178,7 @@ spec:
               { name = "living_room/tv_light", topic = "living_room/tv_light" },
             ]
 
-
-            [lighting]
-            morning_start = "05:20"
-            morning_end   = "06:10"
-            sunset_start  = "22:30"
-            sunset_end    = "23:59"
-            night_floor_brightness = 15
-            daytime_brightness     = 100
-            # Curve pauses Fri noon → Sun noon (weekend evenings stay bright,
-            # Sunday evening dims again for Monday).
-            curve_pause_start = "fri 12:00"
-            curve_pause_end   = "sun 12:00"
-            # Morning routine intentionally omitted — niles requires
-            # fire_days inside [lighting.morning_routine] when the section
-            # is declared, so disabling means removing the whole section.
-
+            # Here only because the Lighting page cannot write anchors yet.
             [[lighting.color_temp_anchors]]
             time = "00:00"
             kelvin = 2000
