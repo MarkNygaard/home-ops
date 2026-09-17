@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/home-ops-agent
-              tag: 0.13.7
+              tag: 0.14.0
             envFrom:
               - secretRef:
                   name: home-ops-agent-secret
@@ -29,6 +29,16 @@ spec:
               NTFY_GATUS_TOPIC: gatus
               NTFY_AGENT_TOPIC: home-ops-agent
               BASE_URL: "https://agent.${SECRET_DOMAIN}"
+              # Turns on the web_search tool for models running on the pi
+              # harness -- gpt-* only; claude-code models keep the Python
+              # tools and never see this. Unset, the tool is not registered
+              # at all rather than registered and failing.
+              #
+              # Cluster DNS rather than search.${SECRET_DOMAIN}: the public
+              # name leaves through the gateway and comes back for nothing,
+              # and stops resolving whenever external DNS does -- which is
+              # exactly the incident the agent gets asked to look at.
+              SEARXNG_URL: http://searxng.productivity.svc.cluster.local:8080
               PR_CHECK_INTERVAL_SECONDS: "1800"
               ALERT_COOLDOWN_SECONDS: "900"
               # Shorter than the PR cycle: this is the loop that notices a node
