@@ -88,6 +88,44 @@ data:
       source_ips:
         - 0.0.0.0
 
+    # Engine selection, because the IPv4 fix alone still left plain search
+    # returning nothing. Those are two separate faults with one symptom.
+    #
+    # A query with no engines= parameter uses the general category, whose
+    # SearXNG defaults are brave, duckduckgo, startpage and google. Three of
+    # those answer with an anti-bot challenge against this exit address, and
+    # google returns a page the parser reads as empty -- no error, no results.
+    # bing works perfectly but ships disabled, so the one healthy general
+    # engine was the one not being asked.
+    #
+    # Measured per engine, after the IPv4 binding:
+    #
+    #   bing        10 results        google      0, silently
+    #   wiby         8 results        brave       Suspended: too many requests
+    #   github      30 results        duckduckgo  CAPTCHA
+    #                                 startpage   Suspended: CAPTCHA
+    #                                 qwant       access denied
+    #                                 marginalia  Suspended
+    #
+    # Enabling bing is what makes a plain query work again. The blocked four
+    # are turned off rather than left in: each costs a request and a timeout
+    # per search and contributes nothing, and leaving them makes the instance
+    # look broken in the UI. They are worth re-testing occasionally -- these
+    # blocks are against the address, not permanent by nature.
+    engines:
+      - name: bing
+        disabled: false
+      - name: wiby
+        disabled: false
+      - name: duckduckgo
+        disabled: true
+      - name: brave
+        disabled: true
+      - name: startpage
+        disabled: true
+      - name: qwant
+        disabled: true
+
     search:
       safe_search: 0
       autocomplete: "duckduckgo"
