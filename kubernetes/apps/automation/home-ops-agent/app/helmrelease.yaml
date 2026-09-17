@@ -175,6 +175,22 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      # The git clone of home-ops and the per-run worktrees a code fix is made
+      # in. AGENT_WORKSPACE_DIR defaults to a path under $HOME, and $HOME is on
+      # the read-only root filesystem -- so without this the checkout fails with
+      # "Read-only file system: '/home/agent/workspace'". That failure is caught
+      # and the run falls back to the single-file GitHub Contents API, which
+      # means checkout-based fixes silently never happened here.
+      #
+      # emptyDir, not a PVC: the clone is re-created whenever it is missing, so
+      # losing it on a restart costs one fetch and nothing else. local-path
+      # would also pin the pod to one node for no benefit.
+      workspace:
+        type: emptyDir
+        advancedMounts:
+          home-ops-agent:
+            app:
+              - path: /home/agent/workspace
     route:
       app:
         annotations:
