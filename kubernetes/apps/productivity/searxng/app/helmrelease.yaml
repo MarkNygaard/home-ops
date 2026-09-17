@@ -61,7 +61,7 @@ spec:
               readOnlyRootFilesystem: false
               capabilities: {drop: ["ALL"]}
             resources:
-              request:
+              requests:
                 cpu: 50m
                 memory: 128Mi
               limits:
