@@ -59,6 +59,35 @@ data:
       theme_args:
         simple_style: "dark"
 
+    # Bind outgoing requests to the IPv4 wildcard, which pins the socket family
+    # to AF_INET. SearXNG passes source_ips straight to httpx as local_address,
+    # and httpx derives the address family from it.
+    #
+    # Without this, every engine whose hostname has an AAAA record fails. The
+    # pod has a single IPv4 address and no IPv6 route, so httpx resolves
+    # www.google.com to both families, tries v6 first, gets ENETUNREACH, and
+    # reports the misleading "All connection attempts failed" -- which reads
+    # like a firewall or a block rather than a missing route.
+    #
+    # Measured from inside the pod:
+    #
+    #   podIPs               [10.42.2.162]   (no IPv6)
+    #   IPv6 -> google:443   Network is unreachable
+    #   IPv4 -> google:443   connected
+    #   google (has AAAA)    0 results
+    #   bing   (A only)      10 results
+    #   github (A only)      30 results
+    #
+    # That split is the whole diagnosis: engines without AAAA were never
+    # broken. duckduckgo and startpage are a separate and genuine problem --
+    # they answer with a CAPTCHA, which no amount of config fixes.
+    #
+    # Same root cause as the Flux source-controller SSH timeouts already
+    # recorded for this cluster: AAAA lookups on an IPv4-only network.
+    outgoing:
+      source_ips:
+        - 0.0.0.0
+
     search:
       safe_search: 0
       autocomplete: "duckduckgo"
