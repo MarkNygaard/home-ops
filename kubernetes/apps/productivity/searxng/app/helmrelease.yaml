@@ -18,7 +18,21 @@ spec:
           app:
             image:
               repository: docker.io/searxng/searxng
-              tag: latest
+              # Pinned, not latest. With `latest` the running image had
+              # drifted to 2026.5.29 and stayed there three and a half months
+              # despite pullPolicy Always -- spegel serves a cached layer and
+              # nothing re-checks the registry, so the digest never moved.
+              # Nothing surfaced it: no PR, no changelog, no way to say what
+              # was running or to go back, and invisible to Renovate because
+              # there was no version to compare.
+              #
+              # That staleness is not cosmetic here. SearXNG publishes several
+              # builds a day and most are engine-parser fixes, so a May build
+              # meets September's anti-bot measures with May's scrapers.
+              # google, duckduckgo and startpage failing at once is the shape
+              # of that, and a better explanation than the exit address being
+              # blocked.
+              tag: 2026.9.17-274b63b67
             env:
               TZ: Europe/Copenhagen
               # The image entrypoint reads this to verify base URL alignment
