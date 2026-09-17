@@ -101,11 +101,20 @@ data:
     # Measured per engine, after the IPv4 binding:
     #
     #   bing        10 results        google      0, silently
-    #   wiby         8 results        brave       Suspended: too many requests
-    #   github      30 results        duckduckgo  CAPTCHA
+    #   github      30 results        brave       Suspended: too many requests
+    #                                 duckduckgo  CAPTCHA
     #                                 startpage   Suspended: CAPTCHA
-    #                                 qwant       access denied
-    #                                 marginalia  Suspended
+    #                                 qwant       access denied, mojeek 0
+    #
+    # wiby answers but is not enabled here: it is a curated index of
+    # hand-submitted small-web pages, and for "external-dns kubernetes" it
+    # returns nickbp.com and nginx.org. Eight irrelevant results in every
+    # search is worse than none.
+    #
+    # marginalia, stract and right are not present in this build at all.
+    # Worth knowing because engines= silently falls back to the default set
+    # when it matches nothing, so querying them appears to return results
+    # that actually came from the defaults.
     #
     # Enabling bing is what makes a plain query work again. The blocked four
     # are turned off rather than left in: each costs a request and a timeout
@@ -114,8 +123,6 @@ data:
     # blocks are against the address, not permanent by nature.
     engines:
       - name: bing
-        disabled: false
-      - name: wiby
         disabled: false
       - name: duckduckgo
         disabled: true
