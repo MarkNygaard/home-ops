@@ -73,7 +73,11 @@ TB4 cables must be connected **before** first boot so interfaces are present at 
 - **Secrets:** SOPS with age encryption
 - **Backup:** Volsync → Cloudflare R2 (`cluster-volsync` bucket) for Authentik, Radarr, Sonarr, Prowlarr
   - Qdrant and Jellyfin are **excluded** from Volsync (rebuildable, can grow large)
-- **Database:** CloudNativePG (pgvecto.rs image: `ghcr.io/tensorchord/cloudnative-pgvecto.rs:16`) + Valkey (ephemeral Redis-compatible cache) — no WAL archiving for now (rebuildable)
+- **Database:** CloudNativePG (pgvecto.rs image: `ghcr.io/tensorchord/cloudnative-pgvecto.rs:16`) + Valkey (ephemeral Redis-compatible cache)
+  - Backups: barman-cloud **plugin** → `s3://cluster-volsync/postgres` in R2, continuous WAL archiving + nightly base backup at 02:30, 30-day retention.
+    Not `spec.backup.barmanObjectStore` — that field is removed in CNPG 1.31.
+    The recovery window lives on the `ObjectStore` status, not the Cluster's `lastSuccessfulBackup`, which stays empty with the plugin.
+  - This replaced "no WAL archiving (rebuildable)". That was true when the database held nothing; it now holds Authentik SSO, n8n and the harness registry.
 - **Identity/SSO:** Authentik with forward auth on Envoy Gateway HTTPRoutes
 
 ## Storage phases
