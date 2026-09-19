@@ -26,6 +26,14 @@ spec:
     - name: cnpg-barman-plugin
   interval: 1h
   path: ./kubernetes/apps/database/cloudnativepg/cluster
+  # The ObjectStore's endpoint and the backup credentials come from
+  # cluster-secrets. Without this the manifests apply cleanly carrying the
+  # literal string `${R2_ENDPOINT_URL}`, and barman fails every WAL with
+  # "Invalid endpoint" -- applied, healthy-looking, and archiving nothing.
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
