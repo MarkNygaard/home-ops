@@ -1,0 +1,26 @@
+---
+# Barman Cloud backups for CloudNativePG.
+#
+# This is a plugin rather than the Cluster's own `spec.backup.barmanObjectStore`
+# because that field is REMOVED in CloudNativePG 1.31. The operator here is
+# 1.30.0 — the last version that still accepts it — so building backups in-tree
+# would mean rebuilding them at the next operator bump.
+#
+# It must run in the operator's namespace (database): the operator discovers
+# plugins by looking for their service next to itself.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg-barman-plugin
+spec:
+  dependsOn:
+    - name: cloudnativepg
+  interval: 1h
+  path: ./kubernetes/apps/database/cnpg-barman-plugin/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: database
+  wait: true
