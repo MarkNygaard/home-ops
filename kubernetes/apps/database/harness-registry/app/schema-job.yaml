@@ -3,13 +3,22 @@
 #
 # The SQL is mounted from a hash-suffixed ConfigMap, so editing schema.sql
 # changes this Job's pod spec — and a completed Job's spec is immutable. Bump
-# the `-v1` suffix below in the SAME commit as any schema.sql edit, or Flux
-# will fail the reconcile with an immutable-field error. The old Job object can
-# be deleted by hand once the new one has completed.
+# the `-vN` suffix below in the SAME commit as ANY change to the pod spec —
+# a schema.sql edit or an image bump, both of which change it — or Flux will
+# fail the reconcile with an immutable-field error and the Kustomization will
+# stay not-Ready until someone deletes the Job by hand. `ks.yaml` has no
+# `force: true`, so Flux cannot recreate its way out.
+#
+# Renovate proposed exactly this trap in #1095 (an image bump with no rename),
+# and flux-local did not catch it: it diffs rendered manifests from Git and
+# never dry-runs against the live completed Job, which is where immutability
+# is enforced.
+#
+# The old Job object can be deleted by hand once the new one has completed.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: harness-registry-schema-v1
+  name: harness-registry-schema-v2
 spec:
   backoffLimit: 6
   template:
@@ -25,8 +34,10 @@ spec:
       containers:
         - name: psql
           # Same image the cluster already runs, so psql matches the server
-          # version and the pull is a cache hit on every node.
-          image: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
+          # version and the pull is a cache hit on every node. Renamed to -v2
+          # in this commit because the pod spec changes and a completed Job's
+          # spec is immutable — the trap the header comment describes.
+          image: ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
           command: ["/bin/sh", "-c"]
           args:
             - |
