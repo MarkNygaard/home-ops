@@ -9,15 +9,6 @@ spec:
   # drain and has stalled four Talos upgrades in a row. With a replica,
   # CNPG switches over on eviction and the drain proceeds normally.
   instances: 2
-  # PostgreSQL 17 on CloudNativePG's own image, which ships pgvector (0.8.6,
-  # up from the 0.8.0 mission-control has). This leaves pgvecto.rs behind: it
-  # is deprecated upstream, and its `vectors` extension was installed in none
-  # of the eight databases here, so there is nothing of it to carry over.
-  #
-  # Changing this triggers a declarative offline in-place pg_upgrade. The
-  # operator copies the old binaries into the upgrade job, so crossing image
-  # families is fine; it reads the major version from the tag, which is why
-  # the tag has to start with `17`.
   # CloudNativePG's own image, still PostgreSQL 16. Same major version, so
   # this is a rolling restart and not a pg_upgrade — which is the point.
   #
