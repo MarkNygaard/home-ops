@@ -18,7 +18,17 @@ spec:
   # operator copies the old binaries into the upgrade job, so crossing image
   # families is fine; it reads the major version from the tag, which is why
   # the tag has to start with `17`.
-  imageName: ghcr.io/cloudnative-pg/postgresql:17-standard-bookworm
+  # Back on 16 after the upgrade to 17-standard-bookworm failed its pg_upgrade
+  # check: pg_upgrade runs the OLD binaries inside the NEW image, and these two
+  # images do not share a userland. pgvecto.rs 16 is Debian bullseye
+  # (libssl.so.1.1); CloudNativePG's bookworm image has OpenSSL 3, so the old
+  # `postgres -V` could not even start.
+  #
+  # The route to 17 is therefore two steps, not one: first swap to
+  # ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm, which is the same
+  # major and so a plain restart rather than an upgrade, and only then go to 17
+  # with both sides on bookworm.
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
   primaryUpdateStrategy: unsupervised
   # Continuous WAL archiving to R2, via the barman-cloud plugin. `isWALArchiver`
   # is what turns archiving on: without it the plugin can take base backups but
