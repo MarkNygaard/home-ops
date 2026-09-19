@@ -35,8 +35,14 @@ spec:
       effective_cache_size: 512MB
       work_mem: 4MB
       maintenance_work_mem: 64MB
-    shared_preload_libraries:
-      - vectors.so
+    # No shared_preload_libraries. `vectors.so` (pgvecto.rs) was preloaded here
+    # and installed in exactly zero databases — checked across all eight. The
+    # only vector extension in use is pgvector (`vector` 0.8.0, in
+    # mission-control), which is a different project and needs no preloading.
+    #
+    # Dropping it before the PostgreSQL 17 upgrade removes the upgrade's main
+    # risk: a preloaded library that must exist in the new image or the server
+    # will not start at all.
   bootstrap:
     initdb:
       database: authentik
