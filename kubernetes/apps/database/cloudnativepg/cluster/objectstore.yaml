@@ -1,0 +1,31 @@
+---
+# Where Postgres backups and WAL go.
+#
+# A prefix inside the bucket volsync already uses, so the existing R2 token
+# covers it and there is nothing new to create in Cloudflare. Barman writes
+# under `postgres/<serverName>/`, keeping it clear of volsync's own paths.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: postgres-r2
+spec:
+  configuration:
+    destinationPath: s3://cluster-volsync/postgres
+    endpointURL: ${R2_ENDPOINT_URL}
+    s3Credentials:
+      accessKeyId:
+        name: postgres-backup-r2
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: postgres-backup-r2
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+      # Two at a time: this is a 3-node home cluster on 2.5 GbE, and the point
+      # is that archiving keeps up, not that it finishes first.
+      maxParallel: 2
+    data:
+      compression: gzip
+  # Long enough to survive a bad week unnoticed, short enough that a 10Gi
+  # database does not accumulate cost in R2.
+  retentionPolicy: 30d

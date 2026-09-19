@@ -11,6 +11,14 @@ spec:
   instances: 2
   imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16-v0.4.0
   primaryUpdateStrategy: unsupervised
+  # Continuous WAL archiving to R2, via the barman-cloud plugin. `isWALArchiver`
+  # is what turns archiving on: without it the plugin can take base backups but
+  # recovery stops at the last one, which is not point-in-time recovery.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: postgres-r2
   # Keep the two instances on separate nodes — local-path PVCs are
   # node-pinned, so co-locating them would defeat the point.
   affinity:

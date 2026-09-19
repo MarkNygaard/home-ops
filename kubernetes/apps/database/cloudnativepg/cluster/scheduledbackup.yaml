@@ -1,0 +1,17 @@
+---
+# Nightly base backup. WAL is archived continuously by the plugin, so this is
+# what bounds how much WAL has to be replayed to reach any given moment —
+# not what stands between you and data loss.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-nightly
+spec:
+  # Seconds field first: CNPG uses a six-field cron. 02:30 daily.
+  schedule: "0 30 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
