@@ -21,6 +21,9 @@ metadata:
 spec:
   dependsOn:
     - name: cloudnativepg
+    # The Cluster references the barman plugin by name; without this it can be
+    # applied before the plugin exists and archiving silently does not start.
+    - name: cnpg-barman-plugin
   interval: 1h
   path: ./kubernetes/apps/database/cloudnativepg/cluster
   prune: true
