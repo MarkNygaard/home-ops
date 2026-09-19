@@ -37,7 +37,7 @@ spec:
           # version and the pull is a cache hit on every node. Renamed to -v2
           # in this commit because the pod spec changes and a completed Job's
           # spec is immutable — the trap the header comment describes.
-          image: ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
+          image: ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
           command: ["/bin/sh", "-c"]
           args:
             - |
