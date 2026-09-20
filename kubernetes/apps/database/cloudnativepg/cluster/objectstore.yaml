@@ -26,11 +26,16 @@ spec:
       maxParallel: 2
     data:
       compression: gzip
-  # 14 days. With a nightly base backup that is 14 full copies of a database
-  # that changes slowly — 30 was simply more than anyone would restore from.
+  # 7 days. A nightly base backup means this many full copies of a database
+  # that changes slowly, and 30 was simply more than anyone would restore
+  # from — roughly 12GB, which is past R2's 10GB free tier. Seven is about
+  # 3.5GB and stays inside it.
   #
-  # Not 7: the window has to outlast a problem nobody notices immediately, so
-  # it should cover a fortnight away rather than a long weekend. barman's
-  # retention here is a single window, not a tiered daily/weekly scheme, so
-  # the number is the only dial.
-  retentionPolicy: 14d
+  # Not 3, which was the other candidate: the window has to outlast a mistake
+  # nobody notices at once, and a week covers "away for the weekend, spotted
+  # it on Monday". The difference in cost between the two is about two cents a
+  # month, so the recovery window is the only thing worth optimising here.
+  #
+  # barman's retention is a single window rather than a tiered daily/weekly
+  # scheme, so this number is the only dial.
+  retentionPolicy: 7d
