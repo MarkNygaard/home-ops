@@ -29,7 +29,9 @@ spec:
               prefix: loki_index_
               period: 24h
       limits_config:
-        retention_period: 14d
+        # 7d, matching Prometheus. Enforced by the compactor below — without
+        # `retention_enabled` this value is inert and the chunks stay forever.
+        retention_period: 7d
       compactor:
         retention_enabled: true
         delete_request_store: filesystem
