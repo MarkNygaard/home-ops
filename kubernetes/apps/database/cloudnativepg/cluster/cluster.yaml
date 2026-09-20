@@ -22,7 +22,7 @@ spec:
   # uses C collation so no text index can be invalidated, nothing is in
   # shared_preload_libraries, and the operator accepted the change in a
   # server-side dry run.
-  imageName: ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
   primaryUpdateStrategy: unsupervised
   # Continuous WAL archiving to R2, via the barman-cloud plugin. `isWALArchiver`
   # is what turns archiving on: without it the plugin can take base backups but
@@ -48,6 +48,15 @@ spec:
       effective_cache_size: 512MB
       work_mem: 4MB
       maintenance_work_mem: 64MB
+      # ai-harness has 873 schemas and 2662 tables — one schema per tenant.
+      # pg_dump in --binary-upgrade mode locks every one of them in a single
+      # transaction, plus their indexes, which overflows the lock table at the
+      # default 64 and fails the major upgrade with "out of shared memory".
+      #
+      # 1024 x max_connections gives ~205k lock slots against the ~15k that
+      # dump needs, for roughly 35MB of shared memory. It has to be set before
+      # the upgrade: pg_upgrade starts the OLD server from this config.
+      max_locks_per_transaction: "1024"
     # No shared_preload_libraries. `vectors.so` (pgvecto.rs) was preloaded here
     # and installed in exactly zero databases — checked across all eight. The
     # only vector extension in use is pgvector (`vector` 0.8.0, in
