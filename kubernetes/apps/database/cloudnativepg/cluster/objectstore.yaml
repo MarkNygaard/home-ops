@@ -26,6 +26,11 @@ spec:
       maxParallel: 2
     data:
       compression: gzip
-  # Long enough to survive a bad week unnoticed, short enough that a 10Gi
-  # database does not accumulate cost in R2.
-  retentionPolicy: 30d
+  # 14 days. With a nightly base backup that is 14 full copies of a database
+  # that changes slowly — 30 was simply more than anyone would restore from.
+  #
+  # Not 7: the window has to outlast a problem nobody notices immediately, so
+  # it should cover a fortnight away rather than a long weekend. barman's
+  # retention here is a single window, not a tiered daily/weekly scheme, so
+  # the number is the only dial.
+  retentionPolicy: 14d
