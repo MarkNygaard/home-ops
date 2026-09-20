@@ -9,20 +9,20 @@ spec:
   # drain and has stalled four Talos upgrades in a row. With a replica,
   # CNPG switches over on eviction and the drain proceeds normally.
   instances: 2
-  # CloudNativePG's own image, still PostgreSQL 16. Same major version, so
-  # this is a rolling restart and not a pg_upgrade — which is the point.
+  # PostgreSQL 18, straight from 16. pg_upgrade goes from any older major to
+  # the current one, so skipping 17 is one upgrade rather than two.
   #
-  # The direct jump to 17-standard-bookworm failed its pg_upgrade check:
-  # pg_upgrade runs the OLD binaries inside the NEW image, and pgvecto.rs 16 is
-  # Debian bullseye (libssl.so.1.1) while these images are bookworm (OpenSSL 3),
-  # so the old `postgres -V` could not start. This step moves the userland to
-  # bookworm without an upgrade, leaving 17 as an ordinary one later.
+  # Both sides are bookworm, which is the thing that matters: pg_upgrade runs
+  # the OLD binaries inside the NEW image, and the last attempt — from
+  # pgvecto.rs 16 (bullseye) — failed its check because those binaries could
+  # not find libssl.so.1.1. Moving to 16-standard-bookworm first is what made
+  # this an ordinary upgrade.
   #
-  # It is worth doing on its own: pgvecto.rs is deprecated upstream and nothing
-  # here used its extension, while this image is maintained and carries
-  # pgvector 0.8.6 (up from 0.8.0). Every database uses C collation, so the
-  # glibc change between Debian releases cannot invalidate any index.
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
+  # Checked before trying: the image carries pgvector 0.8.6, every database
+  # uses C collation so no text index can be invalidated, nothing is in
+  # shared_preload_libraries, and the operator accepted the change in a
+  # server-side dry run.
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
   primaryUpdateStrategy: unsupervised
   # Continuous WAL archiving to R2, via the barman-cloud plugin. `isWALArchiver`
   # is what turns archiving on: without it the plugin can take base backups but
