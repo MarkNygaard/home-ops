@@ -85,7 +85,15 @@ spec:
         ruleSelectorNilUsesHelmValues: false
         scrapeConfigSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
-        retention: 14d
+        # 7d, not 14: nobody here looks back a fortnight at a metric, and the
+        # TSDB was at 9.79 GiB against a 20Gi volume — roughly 199k active
+        # series, 39% of them apiserver request-duration histogram buckets.
+        #
+        # retentionSize stays as a backstop rather than the thing that bites
+        # first: a size-based eviction drops whole blocks regardless of age, so
+        # it should only ever act if something starts producing far more series
+        # than today.
+        retention: 7d
         retentionSize: 15GB
         resources:
           requests:
