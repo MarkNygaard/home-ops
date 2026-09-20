@@ -9,20 +9,18 @@ spec:
   # drain and has stalled four Talos upgrades in a row. With a replica,
   # CNPG switches over on eviction and the drain proceeds normally.
   instances: 2
-  # PostgreSQL 18, straight from 16. pg_upgrade goes from any older major to
+  # PostgreSQL 18, straight from 16 — pg_upgrade goes from any older major to
   # the current one, so skipping 17 is one upgrade rather than two.
   #
-  # Both sides are bookworm, which is the thing that matters: pg_upgrade runs
-  # the OLD binaries inside the NEW image, and the last attempt — from
-  # pgvecto.rs 16 (bullseye) — failed its check because those binaries could
-  # not find libssl.so.1.1. Moving to 16-standard-bookworm first is what made
-  # this an ordinary upgrade.
+  # Both sides are bookworm. The first attempt, from pgvecto.rs 16 (bullseye),
+  # failed because pg_upgrade runs the OLD binaries inside the NEW image and
+  # they could not find libssl.so.1.1.
   #
-  # Checked before trying: the image carries pgvector 0.8.6, every database
-  # uses C collation so no text index can be invalidated, nothing is in
-  # shared_preload_libraries, and the operator accepted the change in a
-  # server-side dry run.
-  imageName: ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
+  # The second attempt failed dumping ai-harness: 13,003 schemas and 45,596
+  # tables, nearly all of them empty leftovers from a test run against this
+  # database, overflowed the lock table. They are gone now — 38,568 relations
+  # remain against 246,908 — and max_locks_per_transaction is raised below.
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
   primaryUpdateStrategy: unsupervised
   # Continuous WAL archiving to R2, via the barman-cloud plugin. `isWALArchiver`
   # is what turns archiving on: without it the plugin can take base backups but
