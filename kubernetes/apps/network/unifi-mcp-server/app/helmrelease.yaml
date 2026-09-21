@@ -64,29 +64,26 @@ spec:
     route:
       app:
         annotations:
-          # The default generated check hits / and expects 200, which this app
-          # has never served -- it answers 404 on /, /health, /healthz and
-          # /sse, because it is an MCP server rather than a web app. The check
-          # has been red since deployment while the pod sat Running with zero
-          # restarts for seven days. Nothing was broken; the check was asking
-          # the wrong question.
+          # Checks `/`, expecting the 404 the app's router returns. Not `/mcp`,
+          # which is where this check used to point and what made the pod sick.
           #
-          # Pointed at /mcp, the only path the app actually serves. A bare GET
-          # there is rejected with 406, because MCP streamable HTTP requires an
-          # Accept of application/json plus text/event-stream -- and that 406
-          # is the useful signal: it comes from the MCP handler itself, so it
-          # proves the protocol endpoint is answering rather than merely that
-          # something is listening. If the pod dies Envoy returns 503, and if
-          # the route breaks it returns 404; both fail this condition.
+          # Every sessionless request to /mcp leaks ~38 KiB, permanently, in
+          # 0.2.6 — measured: 500 requests moved RSS +18.6 MiB and it stayed
+          # there, while 500 requests to `/` moved it +0.33 MiB, which is the
+          # baseline. At one probe a minute that is 54 MiB/day, a dead-straight
+          # line from 117 to 507 MiB over seven days, and at 511/512 MiB the
+          # container did not OOM-kill: it sat thrashing ~1,178 major page
+          # faults/sec, still Ready, still answering, just slowly. Reported as
+          # enuno/unifi-mcp-server#173.
           #
-          # Asserting 406 rather than driving a real handshake, on purpose. A
-          # POST of initialize would prove more, but it mints an MCP session on
-          # every probe -- 1440 a day at this interval -- and pins the check to
-          # a protocol version that will age out. flux-webhook in the reference
-          # cluster asserts 404 for the same class of reason.
+          # What this costs: a 404 proves the app is answering — Envoy returns
+          # 503 if the pod is gone and 404 comes from the app itself — but it no
+          # longer proves the MCP handler specifically works, which is what the
+          # 406 on /mcp used to demonstrate. That was the better check, and it
+          # was not worth 54 MiB a day to keep. Revisit when #173 is fixed.
           gatus.home-operations.com/endpoint: |-
-            url: https://unifi-mcp.${SECRET_DOMAIN}/mcp
-            conditions: ["[STATUS] == 406"]
+            url: https://unifi-mcp.${SECRET_DOMAIN}/
+            conditions: ["[STATUS] == 404"]
         hostnames:
           - "unifi-mcp.${SECRET_DOMAIN}"
         parentRefs:
