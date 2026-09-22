@@ -172,6 +172,27 @@ spec:
             base_url = "http://piper-app.home-automation.svc.cluster.local:5000"
             default_voice = "jarvis-medium"
 
+            [recognition]
+            # Speaker recognition. The ECAPA model ships inside the image, so
+            # there is nothing to mount and nothing to write -- the container
+            # keeps its read-only root filesystem and its tmp emptyDir.
+            #
+            # No enrollment_dir on purpose: voice prints go to Postgres, where a
+            # print is under a kilobyte. A volume for them was considered and
+            # rejected.
+            #
+            # known_voices_only is deliberately absent too. It defaults to false
+            # and is meant to be turned on from the Niles UI once voices have
+            # actually been enrolled -- setting it here would lock everyone out
+            # before there is anything to match against.
+            #
+            # ORT_DYLIB_PATH is set by the image, so no env var belongs here. A
+            # crashloop reading "Failed to load ONNX Runtime dylib" means the
+            # image predates this feature: roll the tag back rather than adding
+            # anything to this file.
+            enabled = true
+            model_path = "/usr/local/share/niles/ecapa.onnx"
+
             [wled]
             devices = [
               { name = "living_room/ceiling", topic = "living_room/ceiling" },
