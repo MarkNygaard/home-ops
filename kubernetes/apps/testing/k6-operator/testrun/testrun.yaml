@@ -33,7 +33,7 @@ spec:
       file: inventory-stress-v2.js
   runner:
     # Pinned so the experimental-prometheus-rw output name is deterministic.
-    image: grafana/k6:2.2.0
+    image: grafana/k6:2.3.0
     env:
       # Cluster is IPv4-only (Cilium enable-ipv6=false) but the Azure Front Door
       # hostname publishes AAAA records alongside A. A runner handed an answer
