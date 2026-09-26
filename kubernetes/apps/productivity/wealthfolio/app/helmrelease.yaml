@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: docker.io/wealthfolio/wealthfolio
-              tag: 3.8.0
+              tag: 3.9.0
             env:
               TZ: Europe/Copenhagen
               WF_LISTEN_ADDR: 0.0.0.0:8088
