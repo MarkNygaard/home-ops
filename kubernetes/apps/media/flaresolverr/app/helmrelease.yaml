@@ -25,8 +25,25 @@ spec:
             resources:
               requests:
                 cpu: 50m
+                # Idle is ~155 MiB and dead flat; this reserves that much so the
+                # scheduler does not treat the pod as free and overcommit a node.
+                memory: 256Mi
               limits:
-                memory: 1Gi
+                # 2Gi, not 1Gi, to absorb a spike rather than to accommodate
+                # growth. The working set is flat for days — 154.3 to 154.9 MiB
+                # over one 3-day run — and then a single request spawns Chromium
+                # and blows past the limit inside one 30s scrape interval:
+                #
+                #   12:36:00   154.91 MiB
+                #   12:36:30   608.30 MiB   <- caught mid-flight
+                #   12:37:00    57.32 MiB   <- OOMKilled, restarted
+                #
+                # So this is not a leak and raising the limit is not deferring
+                # one. The true peak is unknown — above 1024 MiB, since that is
+                # where the kernel stopped it — so 2Gi is a guess with headroom,
+                # not a measured figure. If OOMKills continue, the next step is
+                # to find the request that does this, not to keep doubling.
+                memory: 2Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
