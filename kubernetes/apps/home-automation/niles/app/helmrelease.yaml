@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-055347e
+              tag: sha-ed6e2e8
             args:
               - serve
               - --config
