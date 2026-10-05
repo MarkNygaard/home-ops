@@ -65,9 +65,16 @@ spec:
                 voices.mkdir(parents=True, exist_ok=True)
                 # JARVIS files live under en/en_GB/jarvis/<quality>/ in the HF
                 # repo. Voice ID Piper exposes = filename stem (e.g. "jarvis-
-                # medium"). Starting with medium (~63 MB); flip to jarvis-high
-                # (~114 MB) later if the character feel needs more weight —
-                # config-only change, no code.
+                # medium").
+                #
+                # Both qualities are kept on disk rather than swapped. The
+                # server loads a voice on demand from --data-dir, so which one
+                # is actually spoken is decided by the caller (niles sets
+                # `default_voice` in its [tts] block), not by what is present
+                # here. Keeping medium means switching back is a one-line niles
+                # change that takes effect on its next restart, with no 109 MB
+                # re-download and no window where the voice is missing. Disk is
+                # not the constraint: this PVC sits on a node with ~640 GB free.
                 downloads = [
                     ("en_GB-alan-medium.onnx",
                      "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx"),
@@ -77,6 +84,10 @@ spec:
                      "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx"),
                     ("jarvis-medium.onnx.json",
                      "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx.json"),
+                    ("jarvis-high.onnx",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/high/jarvis-high.onnx"),
+                    ("jarvis-high.onnx.json",
+                     "https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/high/jarvis-high.onnx.json"),
                 ]
                 for name, url in downloads:
                     dest = voices / name
