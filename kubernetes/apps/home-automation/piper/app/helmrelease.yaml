@@ -152,9 +152,29 @@ spec:
               capabilities: {drop: ["ALL"]}
             resources:
               requests:
-                cpu: 100m
+                # Measured, not guessed: one jarvis-high synthesis burns 14.4
+                # CPU-seconds in 1.03s wall, i.e. ~14 cores in parallel, because
+                # ONNX Runtime uses every core it can find. Reserving 14 cores
+                # for something idle 99.9% of the time would be absurd, so this
+                # is not sized to the burst.
+                #
+                # It is sized for contention. A CPU request is also the CFS
+                # shares weight, and at 100m piper was among the weakest pods on
+                # a 20-core node -- fine while the node is idle, bad exactly when
+                # something heavy is running and a spoken reply still has to
+                # arrive. 1000m makes it competitive without reserving much:
+                # these nodes sit at 5-11% of CPU requested.
+                #
+                # This buys priority, not a guarantee. Under genuine contention
+                # synthesis will still be slower than the measured 1.03s.
+                cpu: 1000m
                 memory: 256Mi
               limits:
+                # Deliberately no CPU limit. A limit becomes a CFS quota applied
+                # per 100ms period, and a workload that wants 14 cores for one
+                # second would be throttled into repeated stalls -- far worse for
+                # latency than sharing an idle node. Memory stays capped because
+                # memory is not reclaimable the way CPU time is.
                 memory: 1Gi
     defaultPodOptions:
       securityContext:
