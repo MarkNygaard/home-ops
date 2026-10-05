@@ -170,7 +170,12 @@ spec:
             # piper-app, not piper: there is no bare `piper` Service, so the short
             # name resolves to nothing rather than to something wrong.
             base_url = "http://piper-app.home-automation.svc.cluster.local:5000"
-            default_voice = "jarvis-medium"
+            # jarvis-medium is still on the piper PVC, so reverting is this one
+            # line and a restart -- no re-download. The high model is 114 MB
+            # against medium's 63 MB and takes longer to synthesise, which is
+            # the thing to watch: if replies start arriving noticeably late,
+            # that is the cost showing up, not a fault.
+            default_voice = "jarvis-high"
 
             [recognition]
             # Speaker recognition. The ECAPA model ships inside the image, so
