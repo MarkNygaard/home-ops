@@ -54,7 +54,11 @@ spec:
                 cpu: 50m
                 memory: 128Mi
               limits:
-                memory: 512Mi
+                # 1Gi because the current build needs the headroom. 512Mi was
+                # set when niles did less; it now holds speaker-recognition
+                # state and its working set sits around 244Mi and rises with
+                # use rather than staying flat.
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
