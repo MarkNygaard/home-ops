@@ -19,11 +19,25 @@ spec:
   superuser: false
   createdb: false
   createrole: false
-  # One long-lived pod with a small pool, reading once at startup and writing
-  # rarely. Far below harness-registry's 30, which is sized for an API opening
-  # a connection per request; a cap this low turns a connection leak into a
-  # niles problem rather than a cluster-wide one.
-  connectionLimit: 10
+  # Still a cap rather than -1, for the original reason: a connection leak here
+  # should be a niles problem, not a cluster-wide one. 10 was the wrong number
+  # though, and it failed in the one situation nobody tests -- a rolling update.
+  #
+  # During a rollout the old pod and the new one are both connected, so the
+  # real requirement is twice the pool, not once. Meanwhile the app grew: this
+  # build opens connections for secrets, config state, tado token storage and
+  # enrolled speakers, and sha-e002f29 crash-looped on exactly that:
+  #
+  #   Error: initializing speaker recognition
+  #     0: loading enrolled speakers from the niles database
+  #     1: enrollment storage failed: pool timed out waiting for a connection
+  #
+  # Helm then timed out waiting for readiness and rolled back, so the deploy
+  # failed twice while Postgres itself was healthy the whole time.
+  #
+  # 25 covers two concurrent pods with headroom, stays below harness-registry's
+  # 30, and is comfortable against max_connections=200 with ~46 in use.
+  connectionLimit: 25
   passwordSecret:
     name: niles-db-secret
   # Dropping the CR must not drop the role that owns the data.
