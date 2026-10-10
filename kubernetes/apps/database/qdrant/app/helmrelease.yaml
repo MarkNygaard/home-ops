@@ -15,7 +15,7 @@ spec:
           app:
             image:
               repository: docker.io/qdrant/qdrant
-              tag: v1.19.1
+              tag: v1.19.2
             env:
               TZ: Europe/Copenhagen
             probes:
