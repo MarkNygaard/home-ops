@@ -157,8 +157,26 @@ spec:
 
             [database]
             url_env = "NILES_DATABASE_URL"
-            # The niles role is capped at connectionLimit 10 in the database namespace.
-            max_connections = 5
+            # Half the role's connectionLimit, so a rolling update -- two pods
+            # connected at once -- still fits. The cap is 25 (database/niles
+            # DatabaseRole); this said 10 and the pool said 5, which was right
+            # until the cap was raised on 2026-10-08 and the pool that was
+            # derived from it was not.
+            #
+            # 5 became too few as the app grew. Startup opens connections
+            # concurrently for secrets, config state, tado tokens, enrolled
+            # speakers, the learning journal and conversation history -- six
+            # readers racing for five slots, so one or two lose, wait 10s, and
+            # give up. The visible cost is lost state on every deploy:
+            #
+            #   [learning] the journal could not be read (pool timed out);
+            #     starting empty
+            #
+            # That line is niles treating "I could not read it" as "it is
+            # empty", which is a question for the niles project rather than for
+            # this file. Sizing the pool correctly removes the trigger; it does
+            # not fix the behaviour.
+            max_connections = 10
 
             [auth]
             # The Secret's key must be exactly this string. envFrom silently drops
