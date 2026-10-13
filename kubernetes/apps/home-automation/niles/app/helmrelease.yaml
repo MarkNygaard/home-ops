@@ -17,11 +17,9 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/niles
-              tag: sha-3dbd1e2
+              tag: sha-f2d1197
             args:
               - serve
-              - --config
-              - /etc/niles/niles.toml
             env:
               TZ: Europe/Copenhagen
             envFrom:
@@ -97,13 +95,11 @@ spec:
             port: 10300
             protocol: TCP
     persistence:
-      config-file:
-        type: configMap
-        name: niles
-        globalMounts:
-          - path: /etc/niles/niles.toml
-            subPath: niles.toml
-            readOnly: true
+      # No config-file mount any more. niles reads everything from its own
+      # database and from environment variables, so the ConfigMap it used to
+      # mount at /etc/niles/niles.toml is gone. Leaving the mount behind would
+      # fail the pod outright rather than degrade: a configMap volume naming a
+      # ConfigMap that does not exist blocks container creation.
       tmp:
         type: emptyDir
     route:
@@ -142,119 +138,3 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
-    configMaps:
-      config:
-        data:
-          niles.toml: |
-            # What the app cannot set for itself. Everything else now lives in the
-            # override document in Postgres, written from Settings.
-            #
-            # Credential fields name an environment variable; the values arrive from
-            # niles-secret through envFrom.
-
-            [mqtt]
-            host = "mosquitto.home-automation.svc.cluster.local"
-
-            [database]
-            url_env = "NILES_DATABASE_URL"
-            # Half the role's connectionLimit, so a rolling update -- two pods
-            # connected at once -- still fits. The cap is 25 (database/niles
-            # DatabaseRole); this said 10 and the pool said 5, which was right
-            # until the cap was raised on 2026-10-08 and the pool that was
-            # derived from it was not.
-            #
-            # 5 became too few as the app grew. Startup opens connections
-            # concurrently for secrets, config state, tado tokens, enrolled
-            # speakers, the learning journal and conversation history -- six
-            # readers racing for five slots, so one or two lose, wait 10s, and
-            # give up. The visible cost is lost state on every deploy:
-            #
-            #   [learning] the journal could not be read (pool timed out);
-            #     starting empty
-            #
-            # That line is niles treating "I could not read it" as "it is
-            # empty", which is a question for the niles project rather than for
-            # this file. Sizing the pool correctly removes the trigger; it does
-            # not fix the behaviour.
-            max_connections = 10
-
-            [auth]
-            # The Secret's key must be exactly this string. envFrom silently drops
-            # keys that are not valid identifiers, and with no credentials sign-in
-            # reports itself off and the API is open -- check `configured` in
-            # /auth/status, not just `enabled`.
-            session_secret_env = "NILES_SESSION_SECRET"
-
-            [stt]
-            language = "en"
-
-            [tts]
-            # piper-app, not piper: there is no bare `piper` Service, so the short
-            # name resolves to nothing rather than to something wrong.
-            base_url = "http://piper-app.home-automation.svc.cluster.local:5000"
-            # jarvis-medium is still on the piper PVC, so reverting is this one
-            # line and a restart -- no re-download. The high model is 114 MB
-            # against medium's 63 MB and takes longer to synthesise, which is
-            # the thing to watch: if replies start arriving noticeably late,
-            # that is the cost showing up, not a fault.
-            default_voice = "jarvis-high"
-
-            [recognition]
-            # Speaker recognition. The ECAPA model ships inside the image, so
-            # there is nothing to mount and nothing to write -- the container
-            # keeps its read-only root filesystem and its tmp emptyDir.
-            #
-            # No enrollment_dir on purpose: voice prints go to Postgres, where a
-            # print is under a kilobyte. A volume for them was considered and
-            # rejected.
-            #
-            # known_voices_only is deliberately absent too. It defaults to false
-            # and is meant to be turned on from the Niles UI once voices have
-            # actually been enrolled -- setting it here would lock everyone out
-            # before there is anything to match against.
-            #
-            # ORT_DYLIB_PATH is set by the image, so no env var belongs here. A
-            # crashloop reading "Failed to load ONNX Runtime dylib" means the
-            # image predates this feature: roll the tag back rather than adding
-            # anything to this file.
-            enabled = true
-            model_path = "/usr/local/share/niles/ecapa.onnx"
-
-            [wled]
-            devices = [
-              { name = "living_room/ceiling", topic = "living_room/ceiling" },
-              { name = "living_room/tv_light", topic = "living_room/tv_light" },
-            ]
-
-            # Here only because the Lighting page cannot write anchors yet.
-            [[lighting.color_temp_anchors]]
-            time = "00:00"
-            kelvin = 2000
-
-            [[lighting.color_temp_anchors]]
-            time = "05:45"
-            kelvin = 2000
-
-            [[lighting.color_temp_anchors]]
-            time = "06:30"
-            kelvin = 2700
-
-            [[lighting.color_temp_anchors]]
-            time = "12:00"
-            kelvin = 4500
-
-            [[lighting.color_temp_anchors]]
-            time = "17:00"
-            kelvin = 3500
-
-            [[lighting.color_temp_anchors]]
-            time = "21:30"
-            kelvin = 2700
-
-            [[lighting.color_temp_anchors]]
-            time = "23:00"
-            kelvin = 2000
-
-            [[lighting.color_temp_anchors]]
-            time = "23:59"
-            kelvin = 2000
