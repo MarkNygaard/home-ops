@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kokoro
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  # Model cache only. Kokoro is stateless: it takes text and returns audio
+  # bytes, so no podcast ever lands here -- where those go is a niles decision.
+  # The weights are about 312 MB; 5Gi matches piper rather than being measured,
+  # and local-path pins this to whichever node claims it first.
+  resources:
+    requests:
+      storage: 5Gi

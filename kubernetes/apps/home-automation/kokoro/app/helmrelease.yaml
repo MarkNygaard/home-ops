@@ -1,0 +1,98 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kokoro
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kokoro
+  interval: 1h
+  values:
+    controllers:
+      kokoro:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              # CPU build on purpose. The GPU image wants CUDA, and the only
+              # GPU here is the MS-01 iGPU, which Jellyfin uses for transcoding.
+              # Kokoro is 82M parameters and this work is offline, so paying
+              # latency to avoid that contention is the right trade.
+              repository: ghcr.io/remsky/kokoro-fastapi-cpu
+              tag: v0.2.4
+            env:
+              TZ: Europe/Copenhagen
+              # Keep the weights on the PVC so a restart does not re-download
+              # ~312 MB from HuggingFace.
+              HF_HOME: /data/hf
+              XDG_CACHE_HOME: /data/cache
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 8880
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  # First boot downloads the model before it can answer. 60 x
+                  # 10s allows ten minutes; a shorter window would fail the
+                  # rollout on a slow pull and look like a broken image.
+                  failureThreshold: 60
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              # The image writes its model cache and scratch files under /data,
+              # but also expects a writable working directory of its own, so a
+              # read-only root is not available here the way it is for niles.
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                # Idle is small; synthesis is the spike. Like piper, the request
+                # is a scheduling floor and a CFS shares weight, not a cap --
+                # see the piper HelmRelease for the measurement behind that.
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                # No CPU limit, deliberately: a CFS quota would throttle the
+                # synthesis burst into stalls. Memory is capped because memory
+                # is not reclaimable the way CPU time is.
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      data:
+        existingClaim: kokoro
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    # No HTTPRoute. Nothing outside the cluster needs to reach this: niles
+    # calls it over the cluster Service, and an unauthenticated TTS endpoint is
+    # not something to publish through the tunnel. Add one only if a person
+    # ever needs the browser UI, and put auth in front of it.

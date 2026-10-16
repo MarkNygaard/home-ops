@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./kokoro/ks.yaml
   - ./mosquitto/ks.yaml
   - ./niles/ks.yaml
   - ./piper/ks.yaml
