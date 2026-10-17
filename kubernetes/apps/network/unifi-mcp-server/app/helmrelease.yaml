@@ -33,6 +33,23 @@ spec:
               # internal transport name.
               MCP_SERVER_TRANSPORT: http
               MCP_SERVER_PORT: &port 3000
+              # 0.6.x defaults server_host to 127.0.0.1 -- config.py says
+              # "Defaults to loopback; set MCP_SERVER_HOST=0.0.0.0 to expose on
+              # all interfaces". 0.2.6 bound every interface, so the upgrade
+              # silently made the pod unreachable: uvicorn came up, the pod
+              # reported 1/1 Running, and every request through the Service
+              # returned nothing at all. Binding the pod IP is how a container
+              # is reached; there is no second process here to talk to it over
+              # loopback.
+              MCP_SERVER_HOST: 0.0.0.0
+              # 0.6.x writes an audit log, defaulting to `audit.log` relative
+              # to its working directory -- /app, which is read-only here. The
+              # symptom is an ERROR per request and no audit trail, while the
+              # server otherwise works. /tmp is the emptyDir this pod already
+              # mounts, so the log survives for the life of the pod and dies
+              # with it, which is the right lifetime for something nothing
+              # reads back.
+              UNIFI_AUDIT_LOG_PATH: /tmp/audit.log
             envFrom:
               - secretRef:
                   name: unifi-mcp-server-secret
