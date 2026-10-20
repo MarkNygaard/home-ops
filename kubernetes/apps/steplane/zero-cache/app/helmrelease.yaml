@@ -51,6 +51,17 @@ spec:
               # prefix for publications it manages itself. Changing this value
               # later forces a full replica resync.
               ZERO_APP_PUBLICATIONS: zero_data
+              # Left to itself Zero starts max(1, cores - 1) sync worker
+              # processes, which on these 14-core MS-01 nodes is 13-14. Each
+              # budgets up to ~262 MB of deferred IVM writes, and the pod sat
+              # at 983Mi resident with no clients and no data -- half the 2Gi
+              # limit before anything had happened.
+              #
+              # Four is ample for a prototype and leaves real headroom. Raise
+              # it when concurrent client syncing actually becomes the
+              # bottleneck, together with the memory limit below; the two have
+              # to move as a pair.
+              ZERO_NUM_SYNC_WORKERS: "4"
             # ZERO_UPSTREAM_DB and ZERO_ADMIN_PASSWORD arrive from here.
             # ZERO_QUERY_URL and ZERO_MUTATE_URL will join them once the Hono
             # API is deployed; they are not secret, but keeping them in the
@@ -171,8 +182,26 @@ spec:
           # hostname works as soon as external-dns creates the record from
           # this route.
           #
-          # Auth is zero-cache's own: browsers present a Bearer token and it
-          # validates them. There is no Cloudflare Access in front, by design.
+          # There is no Cloudflare Access in front, by design -- but note that
+          # zero-cache does NOT authenticate callers itself. The
+          # ZERO_AUTH_SECRET / ZERO_AUTH_JWK / ZERO_AUTH_JWKS_URL options that
+          # used to do that are deprecated in 1.11. zero-cache now forwards the
+          # client's token (Authorization: Bearer, or cookies with
+          # ZERO_*_FORWARD_COOKIES) to ZERO_QUERY_URL and ZERO_MUTATE_URL, and
+          # the API behind those decides who the caller is.
+          #
+          # So until that API exists, this hostname is public with nothing
+          # enforcing anything. It is currently harmless only because the
+          # steplane database has no tables -- the publication reports zero
+          # published tables, so there is nothing to serve. Do not put real
+          # data in before the API is authenticating.
+          #
+          # Worth stating plainly because it is easy to assume otherwise:
+          # Postgres RLS cannot be the read-side boundary here. Logical
+          # replication ignores RLS, so every row of every tenant lands in this
+          # pod's SQLite replica and browsers read from that, never from
+          # Postgres. RLS still protects the write path, which goes through the
+          # API. The read path's only boundary is the query handlers.
           - name: envoy-external
             namespace: network
             sectionName: https
