@@ -28,6 +28,29 @@ spec:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
               ZERO_ENABLE_CRUD_MUTATIONS: "false"
+              # Points at a publication created by hand, because zero-cache
+              # cannot create its own here. Left to itself it runs
+              #   CREATE PUBLICATION _zero_public_0 FOR TABLES IN SCHEMA public
+              # and Postgres requires superuser for the FOR TABLES IN SCHEMA
+              # form specifically -- ownership is enough for FOR TABLE, but not
+              # this. The cluster runs enableSuperuserAccess: false, so the
+              # first deploy crashlooped on
+              #   must be superuser to create FOR TABLES IN SCHEMA publication
+              #
+              # zero_data was therefore created once, manually, as the postgres
+              # superuser:
+              #   CREATE PUBLICATION zero_data FOR TABLES IN SCHEMA public;
+              #
+              # It stays owned by postgres and cannot be handed to the steplane
+              # role: Postgres requires the owner of a FOR TABLES IN SCHEMA
+              # publication to be a superuser too. That is fine -- the schema
+              # form auto-includes tables created later, so nothing needs to
+              # ALTER it as Steplane's schema grows.
+              #
+              # The name must not begin with an underscore; Zero reserves that
+              # prefix for publications it manages itself. Changing this value
+              # later forces a full replica resync.
+              ZERO_APP_PUBLICATIONS: zero_data
             # ZERO_UPSTREAM_DB and ZERO_ADMIN_PASSWORD arrive from here.
             # ZERO_QUERY_URL and ZERO_MUTATE_URL will join them once the Hono
             # API is deployed; they are not secret, but keeping them in the
@@ -46,7 +69,13 @@ spec:
             # 2. The cluster runs with enableSuperuserAccess: false, so Zero
             #    cannot install the event triggers it uses to detect schema
             #    changes gracefully. Migrations therefore force a full resync.
-            #    Settle the schema before this matters.
+            #    Settle the schema before this matters. The same missing
+            #    superuser is why ZERO_APP_PUBLICATIONS is set above.
+            #
+            # Granting the steplane role SUPERUSER would remove both problems
+            # and is the wrong trade: superuser is cluster-wide, not
+            # database-scoped, so it would also hand Steplane full access to
+            # Authentik, n8n and every other database on this cluster.
             envFrom:
               - secretRef:
                   name: zero-cache-env
