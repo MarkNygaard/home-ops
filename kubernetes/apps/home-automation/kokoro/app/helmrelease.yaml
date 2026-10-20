@@ -21,7 +21,7 @@ spec:
               # Kokoro is 82M parameters and this work is offline, so paying
               # latency to avoid that contention is the right trade.
               repository: ghcr.io/remsky/kokoro-fastapi-cpu
-              tag: v0.2.4
+              tag: v0.9.0
             env:
               TZ: Europe/Copenhagen
               # Keep the weights on the PVC so a restart does not re-download
