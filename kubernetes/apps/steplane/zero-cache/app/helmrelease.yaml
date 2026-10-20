@@ -1,0 +1,153 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zero-cache
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: zero-cache
+  interval: 1h
+  values:
+    controllers:
+      zero-cache:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        # Recreate, not RollingUpdate. Two pods must never hold the SQLite
+        # replica at once, and a rolling update exists precisely to run the old
+        # and new pods together. This trades a few seconds of downtime per
+        # deploy for never corrupting the replica. No HPA for the same reason.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: docker.io/rocicorp/zero
+              tag: 1.11.0
+            env:
+              TZ: Europe/Copenhagen
+              ZERO_REPLICA_FILE: /data/replica.db
+              ZERO_ENABLE_CRUD_MUTATIONS: "false"
+            # ZERO_UPSTREAM_DB and ZERO_ADMIN_PASSWORD arrive from here.
+            # ZERO_QUERY_URL and ZERO_MUTATE_URL will join them once the Hono
+            # API is deployed; they are not secret, but keeping them in the
+            # same Secret means one encrypted file to edit rather than values
+            # split across two places.
+            #
+            # Upstream is the in-cluster CNPG cluster. Two consequences worth
+            # knowing before debugging a surprise resync:
+            #
+            # 1. Logical replication slots do not survive a CNPG switchover on
+            #    their own, and a switchover happens on every Talos upgrade --
+            #    that is by design here, it is what unblocks the node drain.
+            #    So expect zero-cache to resync after a Talos upgrade. Cheap
+            #    while this database is small; revisit via PG 18 failover
+            #    slots if it stops being cheap.
+            # 2. The cluster runs with enableSuperuserAccess: false, so Zero
+            #    cannot install the event triggers it uses to detect schema
+            #    changes gracefully. Migrations therefore force a full resync.
+            #    Settle the schema before this matters.
+            envFrom:
+              - secretRef:
+                  name: zero-cache-env
+            lifecycle:
+              preStop:
+                exec:
+                  # Let in-flight WebSocket clients notice the close before the
+                  # process goes. Paired with the 600s grace period below, which
+                  # is what actually allows a long shutdown.
+                  command: ["/bin/sh", "-c", "sleep 10"]
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 4848
+                  periodSeconds: 5
+                  # 120 x 5s = 10 minutes. First start replicates the whole
+                  # upstream database into SQLite, and failing the rollout
+                  # part-way through that would look like a broken image.
+                  failureThreshold: 120
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 5
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /keepalive
+                    port: *port
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              # The image declares no USER, so it would otherwise run as root.
+              # It is pinned to a non-root UID below instead. The root
+              # filesystem stays writable because the image's workdir is
+              # /opt/app and nothing here has established that it only ever
+              # writes to /data.
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 1000m
+                memory: 1Gi
+              limits:
+                memory: 2Gi
+    defaultPodOptions:
+      # Long enough for the preStop sleep plus an orderly SQLite shutdown.
+      # Killing this mid-write is how a replica gets corrupted and has to
+      # resync from upstream.
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    # 4849 is deliberately absent. The image exposes it, but nothing should
+    # reach it -- not through this Service, and not through the route below.
+    persistence:
+      data:
+        existingClaim: zero-cache-data
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: zero-cache
+        hostnames:
+          - "zero.${SECRET_DOMAIN}"
+        parentRefs:
+          # External, because browsers connect from outside the LAN. The
+          # Cloudflare Tunnel already publishes a wildcard *.${SECRET_DOMAIN}
+          # to this gateway, so no cloudflared config change is needed -- the
+          # hostname works as soon as external-dns creates the record from
+          # this route.
+          #
+          # Auth is zero-cache's own: browsers present a Bearer token and it
+          # validates them. There is no Cloudflare Access in front, by design.
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

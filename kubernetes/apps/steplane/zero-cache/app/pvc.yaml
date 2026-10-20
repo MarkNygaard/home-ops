@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zero-cache-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # local-path is the only StorageClass here and the right one anyway: it is a
+  # directory on the node's Samsung 990 Pro NVMe, so SQLite gets real fsync
+  # semantics. NFS or anything network-backed would not.
+  #
+  # The cost is that the PV carries nodeAffinity for whichever node claims it,
+  # so this pod can only ever run there. It is unavailable while that node is
+  # -- including during Talos upgrades, which drain nodes one at a time. That
+  # is inherent to one replica holding a local SQLite replica; a second pod
+  # must never share this volume, which is also why the Deployment below uses
+  # Recreate rather than RollingUpdate.
+  #
+  # 20Gi is a request, not a quota: local-path does not enforce size, so the
+  # real ceiling is free space on that node's disk (hundreds of GB).
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
