@@ -8,4 +8,6 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./ghcr-secret.sops.yaml
   - ./zero-cache/ks.yaml
+  - ./steplane-api/ks.yaml

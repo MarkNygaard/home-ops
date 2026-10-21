@@ -1,0 +1,101 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: steplane-api
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: steplane-api
+  interval: 1h
+  values:
+    controllers:
+      steplane-api:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/marknygaard/steplane-api
+              # A mutable tag, paired with pullPolicy: Always below. That is a
+              # deliberate trade for a prototype under active development --
+              # pushing to main and deleting the pod is the whole deploy loop.
+              #
+              # The cost is that the running code is not identifiable from
+              # this repo: two pods started a day apart can differ with no
+              # commit between them, and a rollback has nothing to roll back
+              # to. Every other app here pins an immutable sha- tag and lets
+              # Renovate move it. Switch to that once the API stops changing
+              # hourly.
+              tag: main
+              pullPolicy: Always
+            envFrom:
+              - secretRef:
+                  name: steplane-api
+            env:
+              TZ: Europe/Copenhagen
+              PORT: &port 3000
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      # The image is a private package on the personal GHCR account. Without
+      # this the pod gets ImagePullBackOff with a 401 that reads like the
+      # image does not exist.
+      imagePullSecrets:
+        - name: ghcr-login-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      tmp:
+        type: emptyDir
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    # No route, by design. zero-cache is the only caller, and it reaches this
+    # over cluster DNS. Publishing it would put the query and mutate endpoints
+    # on the internet, where the X-Api-Key check would be the only thing
+    # standing in front of the write path.
