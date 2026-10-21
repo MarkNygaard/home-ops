@@ -18,9 +18,17 @@ spec:
           # Voices are fetched at deploy time so the JARVIS model (community-
           # trained on copyrighted source) never ends up in the home-ops repo.
           setup:
+            # Held at 3.14 deliberately -- see the Renovate rule pinning this
+            # below 3.15. piper-tts ships cp39-abi3 wheels and would be fine,
+            # but it requires onnxruntime, which ships cp311-cp314 only. On
+            # 3.15 pip finds no wheel and tries to build onnxruntime from
+            # source: a CMake/C++ build, in a slim image with no toolchain.
+            # The init never finishes, the Deployment never goes Ready, and
+            # Helm times out and rolls back (this is what happened on
+            # 2026-10-20, PR #1261). Raise once onnxruntime publishes cp315.
             image:
               repository: docker.io/library/python
-              tag: 3.15-slim
+              tag: 3.14-slim
             command: ["python", "-c"]
             args:
               - |
@@ -114,7 +122,7 @@ spec:
           app:
             image:
               repository: docker.io/library/python
-              tag: 3.15-slim
+              tag: 3.14-slim
             env:
               TZ: Europe/Copenhagen
               PYTHONPATH: /pip-install
