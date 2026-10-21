@@ -31,6 +31,28 @@
   },
   packageRules: [
     {
+      // Piper installs piper-tts[http] with pip at deploy time, into a PVC,
+      // and reinstalls whenever the interpreter's minor version changes.
+      // piper-tts itself ships cp39-abi3 wheels and would work anywhere, but
+      // it depends on onnxruntime, which ships cp311-cp314 wheels and no
+      // cp315. On 3.15 pip falls back to building onnxruntime from source --
+      // a CMake/C++ build inside python:3.15-slim, which has no toolchain.
+      //
+      // The init container therefore never completes, the Deployment never
+      // reports Ready, and Helm times out and rolls back. That happened on
+      // 2026-10-20 via PR #1261: piper served fine from the rolled-back
+      // release while its HelmRelease sat Stalled, so nothing was obviously
+      // broken from the outside.
+      //
+      // Scoped to piper's own files so every other python image still moves
+      // freely. Remove once onnxruntime publishes cp315 wheels.
+      description: "Pin Piper's Python base image below 3.15 (onnxruntime has no cp315 wheels)",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["docker.io/library/python"],
+      matchFileNames: ["kubernetes/apps/home-automation/piper/**"],
+      allowedVersions: "<3.15",
+    },
+    {
       // external-dns 1.22.0 stops honouring
       // external-dns.alpha.kubernetes.io/target on a Gateway. The
       // gateway-httproute source falls back to the Gateway's status address
