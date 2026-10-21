@@ -17,18 +17,19 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/steplane-api
-              # A mutable tag, paired with pullPolicy: Always below. That is a
-              # deliberate trade for a prototype under active development --
-              # pushing to main and deleting the pod is the whole deploy loop.
+              # An immutable sha- tag, matching every other app here. This
+              # replaced a mutable `main` with pullPolicy: Always, which
+              # worked but meant the running code could not be identified
+              # from this repo -- two pods started a day apart could differ
+              # with no commit between them, and a rollback had nothing to
+              # roll back to.
               #
-              # The cost is that the running code is not identifiable from
-              # this repo: two pods started a day apart can differ with no
-              # commit between them, and a rollback has nothing to roll back
-              # to. Every other app here pins an immutable sha- tag and lets
-              # Renovate move it. Switch to that once the API stops changing
-              # hourly.
-              tag: main
-              pullPolicy: Always
+              # pullPolicy is deliberately absent now: the default (IfNotPresent
+              # for a non-:latest tag) is correct and cheaper, because a tag
+              # that never moves need not be re-pulled on every restart.
+              # Deploying is now a commit here, which is also what makes the
+              # change reviewable and revertible.
+              tag: sha-bc74a1b
             envFrom:
               - secretRef:
                   name: steplane-api
