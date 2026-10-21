@@ -1,0 +1,25 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: steplane-api
+spec:
+  # Namespace spelled out: Flux resolves dependsOn within the Kustomization's
+  # own namespace unless told otherwise, so this would otherwise wait forever
+  # on a cloudnativepg-cluster in `steplane` that does not exist.
+  dependsOn:
+    - name: cloudnativepg-cluster
+      namespace: database
+  interval: 1h
+  path: ./kubernetes/apps/steplane/steplane-api/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: steplane
+  wait: false

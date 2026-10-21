@@ -61,6 +61,24 @@ spec:
               # prefix for publications it manages itself. Changing this value
               # forces a full replica resync -- expected and cheap here.
               ZERO_APP_PUBLICATIONS: steplane_zero
+              # The Hono API. Cluster-internal http:// to a Service in this
+              # namespace -- there is no reason to leave the cluster and come
+              # back in through Cloudflare to reach a pod next door, and the
+              # API has no HTTPRoute precisely so it cannot be reached any
+              # other way.
+              #
+              # zero-cache sends ZERO_QUERY_API_KEY / ZERO_MUTATE_API_KEY from
+              # the secret as an X-Api-Key header on these calls, and the API
+              # rejects anything that does not match. That check is what makes
+              # a cluster-internal endpoint safe to leave unauthenticated at
+              # the network layer.
+              #
+              # These are not secret, so they live here rather than in the
+              # encrypted file: a reviewer should be able to see where
+              # zero-cache sends queries and mutations without decrypting
+              # anything.
+              ZERO_QUERY_URL: http://steplane-api.steplane.svc.cluster.local:3000/api/zero/query
+              ZERO_MUTATE_URL: http://steplane-api.steplane.svc.cluster.local:3000/api/zero/mutate
               # Left to itself Zero starts max(1, cores - 1) sync worker
               # processes, which on these 14-core MS-01 nodes is 13-14. Each
               # budgets up to ~262 MB of deferred IVM writes, and the pod sat
