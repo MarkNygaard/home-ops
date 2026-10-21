@@ -28,8 +28,8 @@ spec:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
               ZERO_ENABLE_CRUD_MUTATIONS: "false"
-              # Points at a publication created by hand, because zero-cache
-              # cannot create its own here. Left to itself it runs
+              # Names the publication explicitly, because zero-cache cannot
+              # create its own here. Left to itself it runs
               #   CREATE PUBLICATION _zero_public_0 FOR TABLES IN SCHEMA public
               # and Postgres requires superuser for the FOR TABLES IN SCHEMA
               # form specifically -- ownership is enough for FOR TABLE, but not
@@ -37,20 +37,30 @@ spec:
               # first deploy crashlooped on
               #   must be superuser to create FOR TABLES IN SCHEMA publication
               #
-              # zero_data was therefore created once, manually, as the postgres
-              # superuser:
-              #   CREATE PUBLICATION zero_data FOR TABLES IN SCHEMA public;
+              # steplane_zero is maintained by Steplane's own migrations and
+              # lists its tables explicitly. That is deliberately NOT a
+              # schema-wide publication, and the difference is the point.
               #
-              # It stays owned by postgres and cannot be handed to the steplane
-              # role: Postgres requires the owner of a FOR TABLES IN SCHEMA
-              # publication to be a superuser too. That is fine -- the schema
-              # form auto-includes tables created later, so nothing needs to
-              # ALTER it as Steplane's schema grows.
+              # This replaced a hand-made zero_data created as
+              #   CREATE PUBLICATION zero_data FOR TABLES IN SCHEMA public;
+              # which was convenient and wrong: a schema-wide publication
+              # auto-includes every table added later, so it had swept in the
+              # Better Auth tables -- account, session, verification,
+              # invitation. Those are credentials and tokens, and everything
+              # published lands in this pod's SQLite replica, which is what
+              # browsers read from. steplane_zero carries the 16 app tables
+              # (including user/member/organization, needed to render who is
+              # who) and leaves the four secret-bearing ones on the server.
+              #
+              # The lesson generalises: with Zero, the publication IS a
+              # security boundary, because logical replication ignores RLS.
+              # Adding a table to the published set publishes its rows to
+              # clients. Prefer an explicit table list over a schema.
               #
               # The name must not begin with an underscore; Zero reserves that
               # prefix for publications it manages itself. Changing this value
-              # later forces a full replica resync.
-              ZERO_APP_PUBLICATIONS: zero_data
+              # forces a full replica resync -- expected and cheap here.
+              ZERO_APP_PUBLICATIONS: steplane_zero
               # Left to itself Zero starts max(1, cores - 1) sync worker
               # processes, which on these 14-core MS-01 nodes is 13-14. Each
               # budgets up to ~262 MB of deferred IVM writes, and the pod sat
