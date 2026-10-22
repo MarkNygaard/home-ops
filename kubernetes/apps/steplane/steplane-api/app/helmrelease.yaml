@@ -29,13 +29,24 @@ spec:
               # that never moves need not be re-pulled on every restart.
               # Deploying is now a commit here, which is also what makes the
               # change reviewable and revertible.
-              tag: sha-3938db1
+              tag: sha-45172d3
             envFrom:
               - secretRef:
                   name: steplane-api
             env:
               TZ: Europe/Copenhagen
               PORT: &port 3000
+              # Better Auth. The secret half (BETTER_AUTH_SECRET and
+              # AUTH_DATABASE_URL) is in the Secret; these two are not secret
+              # and live here so a reviewer can see where auth thinks it lives
+              # without decrypting anything.
+              #
+              # The cookie domain is the apex, not api.${STEPLANE_DOMAIN}: the
+              # web app is served from the apex and the API from a subdomain,
+              # so a cookie scoped to the subdomain would not be sent by the
+              # app, and one scoped to the apex is sent to both.
+              BETTER_AUTH_URL: https://${STEPLANE_DOMAIN}
+              AUTH_COOKIE_DOMAIN: ${STEPLANE_DOMAIN}
             probes:
               liveness:
                 enabled: true
@@ -96,7 +107,35 @@ spec:
         ports:
           http:
             port: *port
-    # No route, by design. zero-cache is the only caller, and it reaches this
-    # over cluster DNS. Publishing it would put the query and mutate endpoints
-    # on the internet, where the X-Api-Key check would be the only thing
-    # standing in front of the write path.
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: steplane-api
+        # Published because the browser now needs it: Vercel rewrites
+        # ${STEPLANE_DOMAIN}/api/* here, and Better Auth's sign-in flow runs
+        # in this service. Until this commit the API had no route at all and
+        # zero-cache reached it over cluster DNS only.
+        #
+        # What that changes, stated plainly: the Zero query and mutate
+        # endpoints are now reachable from the internet, guarded by the
+        # X-Api-Key check alone.
+        #
+        # DEV_AUTH_SECRET is also exposed, but it is no longer a bearer-any-
+        # user credential. Steplane PR #40 restricts it to demo accounts, and
+        # the database enforces that rather than the application: migration
+        # 0010 added app.is_demo_user(uuid), SECURITY DEFINER, returning only
+        # a boolean -- verified owned by steplane, executable by the API role,
+        # and answering true for all five current users, every one at the
+        # RFC 2606 reserved example.com. Sign-in is by emailed code, so no
+        # real person can hold such an account.
+        #
+        # It is still a static secret on a public endpoint. Removing it from
+        # production entirely is Steplane SL-60, a separate environment, and
+        # should land before real customers do.
+        hostnames:
+          - "api.${STEPLANE_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
