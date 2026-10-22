@@ -77,6 +77,12 @@ spec:
               # encrypted file: a reviewer should be able to see where
               # zero-cache sends queries and mutations without decrypting
               # anything.
+              # Forward the browser's cookies to the query and mutate
+              # endpoints. Better Auth issues a session cookie on the apex
+              # domain; without this, zero-cache strips it and the API sees
+              # an anonymous caller on every request.
+              ZERO_QUERY_FORWARD_COOKIES: "true"
+              ZERO_MUTATE_FORWARD_COOKIES: "true"
               ZERO_QUERY_URL: http://steplane-api.steplane.svc.cluster.local:3000/api/zero/query
               ZERO_MUTATE_URL: http://steplane-api.steplane.svc.cluster.local:3000/api/zero/mutate
               # Left to itself Zero starts max(1, cores - 1) sync worker
