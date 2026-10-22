@@ -75,10 +75,26 @@ spec:
       config:
         data:
           config.yaml: |-
-            # THIS FILE IS NOW AUTHORITATIVE. It was not before: the tunnel ran
-            # token-based and took its rules from the dashboard, so edits here
-            # changed nothing. Edits here now change routing for every public
-            # service, so treat it accordingly.
+            # NOT YET AUTHORITATIVE -- read, then overridden.
+            #
+            # cloudflared does load this file (the Settings line in its log
+            # confirms config and credentials-file), but the tunnel is still
+            # registered remotely-managed on Cloudflare's side, and remote
+            # configuration takes precedence. Verified against the API:
+            #
+            #   GET /accounts/{acct}/cfd_tunnel/{id}/configurations
+            #     source: cloudflare     <- dashboard wins
+            #
+            # So what actually serves traffic is the dashboard's ruleset,
+            # which still uses noTLSVerify: true for the first hostname where
+            # this file sets originServerName. Change routing in the dashboard
+            # until `source` reads `local`.
+            #
+            # Finishing the job means clearing the remote configuration, which
+            # needs an API token with Cloudflare Tunnel:Edit (the cluster-dns
+            # token has Read), or creating a fresh locally-managed tunnel and
+            # repointing DNS. The credentials file and --config below are the
+            # groundwork for either; they are correct and inert.
             tunnel: ${TUNNEL_ID}
             credentials-file: /etc/cloudflared/creds.json
             ingress:
