@@ -1,4 +1,13 @@
 ---
+# This record is what Cloudflare's edge uses to find the tunnel, and
+# external-dns owns it (see the k8s.cname-external TXT beside it). It is
+# therefore the real switch for public routing -- editing the record by hand
+# in Cloudflare does nothing lasting, because external-dns reconciles it back
+# within a minute. That happened on 2026-10-22: the tunnel was swapped, the
+# record was patched directly, and external-dns restored the old target.
+#
+# Targets ${TUNNEL_ID} rather than a literal id so it follows the tunnel in
+# cluster-secrets. A hardcoded id here is how the swap half-worked.
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
@@ -7,4 +16,4 @@ spec:
   endpoints:
     - dnsName: "external.${SECRET_DOMAIN}"
       recordType: CNAME
-      targets: ["fa2e53f8-87d1-400c-9b8a-5b7602d891bf.cfargotunnel.com"]
+      targets: ["${TUNNEL_ID}.cfargotunnel.com"]
