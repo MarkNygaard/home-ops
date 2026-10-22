@@ -29,7 +29,7 @@ spec:
               # that never moves need not be re-pulled on every restart.
               # Deploying is now a commit here, which is also what makes the
               # change reviewable and revertible.
-              tag: sha-90487b2
+              tag: sha-45172d3
             envFrom:
               - secretRef:
                   name: steplane-api
@@ -119,12 +119,20 @@ spec:
         #
         # What that changes, stated plainly: the Zero query and mutate
         # endpoints are now reachable from the internet, guarded by the
-        # X-Api-Key check alone. DEV_AUTH_SECRET -- which authenticates as
-        # ANY user given only that string and a uuid, and which is NOT gated
-        # by NODE_ENV=production -- is now exposed to the same surface. It
-        # should be disabled or gated now that Better Auth provides real
-        # sessions; it is kept only so the existing dev flow does not break
-        # mid-migration.
+        # X-Api-Key check alone.
+        #
+        # DEV_AUTH_SECRET is also exposed, but it is no longer a bearer-any-
+        # user credential. Steplane PR #40 restricts it to demo accounts, and
+        # the database enforces that rather than the application: migration
+        # 0010 added app.is_demo_user(uuid), SECURITY DEFINER, returning only
+        # a boolean -- verified owned by steplane, executable by the API role,
+        # and answering true for all five current users, every one at the
+        # RFC 2606 reserved example.com. Sign-in is by emailed code, so no
+        # real person can hold such an account.
+        #
+        # It is still a static secret on a public endpoint. Removing it from
+        # production entirely is Steplane SL-60, a separate environment, and
+        # should land before real customers do.
         hostnames:
           - "api.${STEPLANE_DOMAIN}"
         parentRefs:
