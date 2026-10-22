@@ -47,6 +47,15 @@ spec:
               # app, and one scoped to the apex is sent to both.
               BETTER_AUTH_URL: https://${STEPLANE_DOMAIN}
               AUTH_COOKIE_DOMAIN: ${STEPLANE_DOMAIN}
+              # SES, for the emailed sign-in code. Region and From are not
+              # secret and live here; the access key pair is in the Secret.
+              #
+              # The From address must be a verified SES identity, and the
+              # account must be out of the SES sandbox to mail anyone who has
+              # not been verified individually -- otherwise sign-in silently
+              # works for you and for nobody else.
+              AWS_REGION: eu-north-1
+              SES_FROM: "Steplane <login@${STEPLANE_DOMAIN}>"
             probes:
               liveness:
                 enabled: true
