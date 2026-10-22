@@ -201,8 +201,12 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "true"
           gatus.home-operations.com/name: zero-cache
+        # Both hostnames, deliberately. Keeping the original working means
+        # the new one can be verified before anything depends on it, and a
+        # mistake here does not take the existing endpoint down.
         hostnames:
           - "zero.${SECRET_DOMAIN}"
+          - "zero.${STEPLANE_DOMAIN}"
         parentRefs:
           # External, because browsers connect from outside the LAN. The
           # Cloudflare Tunnel already publishes a wildcard *.${SECRET_DOMAIN}

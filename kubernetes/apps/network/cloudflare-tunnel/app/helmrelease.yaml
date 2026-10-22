@@ -74,6 +74,17 @@ spec:
                   http2Origin: true
                   originServerName: external.${SECRET_DOMAIN}
                 service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+              # Second zone, same backend. originServerName stays on
+              # ${SECRET_DOMAIN} deliberately: it is the SNI cloudflared
+              # presents to envoy, not the public hostname, so the gateway
+              # keeps serving its existing certificate and no cert for this
+              # domain is needed. Browser TLS terminates at Cloudflare's edge,
+              # which issues for this zone automatically on a proxied record.
+              - hostname: "*.${STEPLANE_DOMAIN}"
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
     persistence:
       config-file:
