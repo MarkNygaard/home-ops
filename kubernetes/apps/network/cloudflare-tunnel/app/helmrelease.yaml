@@ -24,10 +24,17 @@ spec:
               TUNNEL_METRICS: 0.0.0.0:8080
               TUNNEL_POST_QUANTUM: true # disable when using http2
               TUNNEL_TRANSPORT_PROTOCOL: quic # or http2
-            envFrom:
-              - secretRef:
-                  name: cloudflare-tunnel-secret
-            args: ["tunnel", "run"]
+            # No envFrom. TUNNEL_TOKEN is deliberately NOT injected: when it
+            # is present, `tunnel run` fetches its ingress rules from the
+            # Cloudflare dashboard and ignores this repo entirely. That was
+            # the state until now -- the config below was mounted and
+            # decorative, which is exactly how a wrong routing change can look
+            # applied while doing nothing.
+            #
+            # The token is kept in the Secret unused, as the rollback: putting
+            # envFrom back and dropping --config restores dashboard control
+            # without needing to reissue anything.
+            args: ["tunnel", "--config", "/etc/cloudflared/config.yaml", "run"]
             probes:
               liveness: &probes
                 enabled: true
@@ -68,24 +75,37 @@ spec:
       config:
         data:
           config.yaml: |-
+            # THIS FILE IS NOW AUTHORITATIVE. It was not before: the tunnel ran
+            # token-based and took its rules from the dashboard, so edits here
+            # changed nothing. Edits here now change routing for every public
+            # service, so treat it accordingly.
+            tunnel: ${TUNNEL_ID}
+            credentials-file: /etc/cloudflared/creds.json
             ingress:
+              # originServerName rather than noTLSVerify. It is the SNI
+              # cloudflared presents to envoy, not the public hostname, so
+              # envoy serves its real *.${SECRET_DOMAIN} certificate and the
+              # hop stays verified. The dashboard config this replaces used
+              # noTLSVerify: true for the first rule, which skipped the check
+              # instead of fixing the name mismatch behind it.
               - hostname: "*.${SECRET_DOMAIN}"
                 originRequest:
-                  http2Origin: true
                   originServerName: external.${SECRET_DOMAIN}
                 service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
-              # Second zone, same backend. originServerName stays on
-              # ${SECRET_DOMAIN} deliberately: it is the SNI cloudflared
-              # presents to envoy, not the public hostname, so the gateway
-              # keeps serving its existing certificate and no cert for this
-              # domain is needed. Browser TLS terminates at Cloudflare's edge,
-              # which issues for this zone automatically on a proxied record.
+              # Second zone, same backend and same SNI. Browser TLS terminates
+              # at Cloudflare's edge, which issues for this zone automatically
+              # on a proxied record, so no certificate is needed here.
               - hostname: "*.${STEPLANE_DOMAIN}"
                 originRequest:
-                  http2Origin: true
                   originServerName: external.${SECRET_DOMAIN}
                 service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
+            #
+            # http2Origin is deliberately absent, though the previous version
+            # of this file set it. The working dashboard config never used it,
+            # and zero-cache serves WebSockets, whose upgrade HTTP/2 to origin
+            # complicates. Porting it over would have been a regression
+            # disguised as a faithful translation.
     persistence:
       config-file:
         type: configMap
@@ -93,3 +113,13 @@ spec:
         globalMounts:
           - path: /etc/cloudflared/config.yaml
             subPath: config.yaml
+      # Derived from the existing TUNNEL_TOKEN, not newly issued: the token is
+      # base64 JSON holding the same account, tunnel and secret values this
+      # file needs under different names. The tunnel identity is unchanged, so
+      # no DNS record and nothing in Cloudflare has to be touched.
+      credentials:
+        type: secret
+        name: cloudflare-tunnel-secret
+        globalMounts:
+          - path: /etc/cloudflared/creds.json
+            subPath: TUNNEL_CREDENTIALS
