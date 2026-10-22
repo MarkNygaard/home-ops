@@ -75,10 +75,27 @@ spec:
       config:
         data:
           config.yaml: |-
-            # THIS FILE IS NOW AUTHORITATIVE. It was not before: the tunnel ran
-            # token-based and took its rules from the dashboard, so edits here
-            # changed nothing. Edits here now change routing for every public
-            # service, so treat it accordingly.
+            # Authoritative -- for real this time, and worth saying why the
+            # two previous attempts were not.
+            #
+            # First the tunnel ran token-based: TUNNEL_TOKEN's presence makes
+            # `tunnel run` fetch rules from the dashboard and never read this
+            # file. Then it ran with --config and a credentials file, which
+            # cloudflared did read -- but the tunnel was still registered
+            # config_src=cloudflare, and remote configuration takes
+            # precedence, so the dashboard ruleset kept serving. Both times
+            # the config looked applied and did nothing, which is exactly what
+            # made it hard to catch.
+            #
+            # config_src cannot be changed after creation (PATCH accepts only
+            # name and tunnel_secret), so the fix was a new tunnel created
+            # with config_src=local -- it has no remote configuration to be
+            # overridden by. Confirm with:
+            #
+            #   GET /accounts/{acct}/cfd_tunnel/{id}/configurations
+            #     source: local
+            #
+            # Editing this file now changes routing for every public service.
             tunnel: ${TUNNEL_ID}
             credentials-file: /etc/cloudflared/creds.json
             ingress:
