@@ -1,0 +1,120 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: steplane-api-dev
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: steplane-api-dev
+  interval: 1h
+  values:
+    controllers:
+      steplane-api-dev:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/marknygaard/steplane-api
+              tag: sha-9840a8e
+            # Two Secrets, deliberately. The database URLs come from
+            # steplane-api-dev-db, created when the dev database was
+            # provisioned; everything else from this app's own Secret. Keeping
+            # them apart means rotating a database password does not touch the
+            # auth secrets, and vice versa.
+            envFrom:
+              - secretRef:
+                  name: steplane-api-dev-db
+              - secretRef:
+                  name: steplane-api-dev
+            env:
+              TZ: Europe/Copenhagen
+              PORT: &port 3000
+              STEPLANE_ENV: development
+              # Deliberately localhost, not the public hostname: the web app
+              # runs on Mark's machine against this API, so Better Auth must
+              # mint callbacks pointing at the local dev server.
+              BETTER_AUTH_URL: http://localhost:5182
+              # Sign-in codes go to the log instead of SES. No SES_FROM and no
+              # AWS credentials exist here at all, so a misconfiguration
+              # cannot send real mail from a development environment.
+              MAIL_TRANSPORT: log
+            # Deliberately unset: AUTH_COOKIE_DOMAIN (the web app is on
+            # localhost, so an apex cookie would never be sent), SES_FROM,
+            # AWS_*, EDGE_PROXY_SECRET, MCP_RESOURCE.
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      imagePullSecrets:
+        - name: ghcr-login-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      tmp:
+        type: emptyDir
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: steplane-api-dev
+        # Public, like production's API, because Vercel Preview deployments
+        # and Mark's local web app both call it from outside the cluster.
+        #
+        # This is a development environment on the public internet. It holds
+        # no real data and sends no real mail, and its DEV_AUTH_SECRET is
+        # distinct from production's -- so a leak here cannot authenticate
+        # against production.
+        hostnames:
+          - "dev-api.${STEPLANE_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
