@@ -11,3 +11,5 @@ resources:
   - ./ghcr-secret.sops.yaml
   - ./zero-cache/ks.yaml
   - ./steplane-api/ks.yaml
+  - ./steplane-api-dev/ks.yaml
+  - ./zero-cache-dev/ks.yaml

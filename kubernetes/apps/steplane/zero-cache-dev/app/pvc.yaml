@@ -1,0 +1,17 @@
+---
+# Its own volume, entirely separate from production's zero-cache-data. The two
+# must never share a replica file: they track different databases and
+# different slots, and SQLite has no notion of two writers.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zero-cache-dev-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # Smaller than production's 20Gi -- this replicates a development database.
+  # local-path does not enforce size anyway; the real ceiling is node disk.
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi

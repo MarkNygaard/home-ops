@@ -1,0 +1,131 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zero-cache-dev
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: zero-cache-dev
+  interval: 1h
+  values:
+    controllers:
+      zero-cache-dev:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        # Recreate, as in production: two pods must never hold the SQLite
+        # replica at once, which is exactly what a rolling update does.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: docker.io/rocicorp/zero
+              # Same version as production, deliberately. A development
+              # environment that runs a different Zero than production tests
+              # the wrong thing.
+              tag: 1.11.0
+            env:
+              TZ: Europe/Copenhagen
+              ZERO_REPLICA_FILE: /data/replica.db
+              ZERO_ENABLE_CRUD_MUTATIONS: "false"
+              # This is what keeps the two instances apart. The app id is used
+              # in schema and replication slot names, so dev gets its own
+              # steplane_dev_0 schema and a steplane_dev_0_* slot, leaving
+              # production's zero_0_a untouched on the same server.
+              ZERO_APP_ID: steplane_dev
+              # Maintained by Steplane's migrations in the dev database.
+              # Verified before deploying: 20 tables, and none of account,
+              # session, verification or invitation -- same exclusion as
+              # production, so credentials never reach the SQLite replica.
+              ZERO_APP_PUBLICATIONS: steplane_zero
+              # In-cluster, matching production's style: no reason to leave
+              # the cluster and come back through Cloudflare to reach a
+              # Service in the same namespace.
+              ZERO_QUERY_URL: http://steplane-api-dev.steplane.svc.cluster.local:3000/api/zero/query
+              ZERO_MUTATE_URL: http://steplane-api-dev.steplane.svc.cluster.local:3000/api/zero/mutate
+              ZERO_QUERY_FORWARD_COOKIES: "true"
+              ZERO_MUTATE_FORWARD_COOKIES: "true"
+              # Four, as in production: the default is max(1, cores - 1),
+              # which is 13-14 on these nodes and idles at ~1 GB.
+              ZERO_NUM_SYNC_WORKERS: "4"
+            # ZERO_UPSTREAM_DB, ZERO_ADMIN_PASSWORD and the two X-Api-Key
+            # values come from here. The API keys match steplane-api-dev
+            # exactly; change one and you must change the other.
+            envFrom:
+              - secretRef:
+                  name: zero-cache-dev-env
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/bin/sh", "-c", "sleep 10"]
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 4848
+                  periodSeconds: 5
+                  # 10 minutes: the first start replicates the whole dev
+                  # database into SQLite.
+                  failureThreshold: 120
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  periodSeconds: 5
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /keepalive
+                    port: *port
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    # 4849 deliberately absent, as in production.
+    persistence:
+      data:
+        existingClaim: zero-cache-dev-data
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/name: zero-cache-dev
+        hostnames:
+          - "dev-zero.${STEPLANE_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
