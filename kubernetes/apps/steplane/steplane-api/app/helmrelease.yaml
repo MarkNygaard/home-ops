@@ -54,6 +54,11 @@ spec:
               # account must be out of the SES sandbox to mail anyone who has
               # not been verified individually -- otherwise sign-in silently
               # works for you and for nobody else.
+              # Declares the environment explicitly. The API refuses to
+              # start if this is production and DEV_AUTH_SECRET is also set,
+              # which is why that key was removed from the Secret in the same
+              # commit -- the two changes are not independently deployable.
+              STEPLANE_ENV: production
               AWS_REGION: eu-north-1
               SES_FROM: "Steplane <login@${STEPLANE_DOMAIN}>"
             probes:
@@ -130,18 +135,15 @@ spec:
         # endpoints are now reachable from the internet, guarded by the
         # X-Api-Key check alone.
         #
-        # DEV_AUTH_SECRET is also exposed, but it is no longer a bearer-any-
-        # user credential. Steplane PR #40 restricts it to demo accounts, and
-        # the database enforces that rather than the application: migration
-        # 0010 added app.is_demo_user(uuid), SECURITY DEFINER, returning only
-        # a boolean -- verified owned by steplane, executable by the API role,
-        # and answering true for all five current users, every one at the
-        # RFC 2606 reserved example.com. Sign-in is by emailed code, so no
-        # real person can hold such an account.
+        # DEV_AUTH_SECRET is gone from production as of this commit. It
+        # authenticated as any user from one static string, and while PR #40
+        # had narrowed it to demo accounts at the RFC 2606 example.com domain
+        # (enforced in the database by app.is_demo_user, SECURITY DEFINER),
+        # it remained a static secret on a public endpoint.
         #
-        # It is still a static secret on a public endpoint. Removing it from
-        # production entirely is Steplane SL-60, a separate environment, and
-        # should land before real customers do.
+        # The development login now lives only in steplane-api-dev at
+        # dev-api.${STEPLANE_DOMAIN}, with its own distinct value. Production
+        # authenticates through Better Auth sessions alone.
         hostnames:
           - "api.${STEPLANE_DOMAIN}"
         parentRefs:
