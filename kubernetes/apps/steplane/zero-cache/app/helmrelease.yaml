@@ -23,7 +23,7 @@ spec:
           app:
             image:
               repository: docker.io/rocicorp/zero
-              tag: 1.11.0
+              tag: 1.11.3
             env:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
