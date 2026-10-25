@@ -29,7 +29,7 @@ spec:
               # that never moves need not be re-pulled on every restart.
               # Deploying is now a commit here, which is also what makes the
               # change reviewable and revertible.
-              tag: sha-f46d0fe
+              tag: sha-ba3de16
             envFrom:
               - secretRef:
                   name: steplane-api
@@ -61,6 +61,15 @@ spec:
               STEPLANE_ENV: production
               AWS_REGION: eu-north-1
               SES_FROM: "Steplane <login@${STEPLANE_DOMAIN}>"
+              # Quoted deliberately. YAML 1.1 resolves a bare `on` to the
+              # boolean true, which would reach the container as the string
+              # "true" rather than "on" -- the quotes are what keep the value
+              # the API is actually looking for.
+              #
+              # Production only. The dev API is left as it was, so that if
+              # this turns out to gate something unexpectedly, dev-api still
+              # answers and can be compared against.
+              SSO_ENABLED: "on"
             probes:
               liveness:
                 enabled: true
