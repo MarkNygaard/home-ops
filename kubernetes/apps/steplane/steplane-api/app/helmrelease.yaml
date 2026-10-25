@@ -29,7 +29,7 @@ spec:
               # that never moves need not be re-pulled on every restart.
               # Deploying is now a commit here, which is also what makes the
               # change reviewable and revertible.
-              tag: sha-d5e8cbd
+              tag: sha-f46d0fe
             envFrom:
               - secretRef:
                   name: steplane-api
