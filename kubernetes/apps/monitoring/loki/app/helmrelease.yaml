@@ -57,5 +57,23 @@ spec:
       replicas: 0
     write:
       replicas: 0
-    serviceMonitor:
-      enabled: true
+    # Nested under `monitoring`, which is where this key has always lived.
+    # It sat at the top level from the original Loki commit until now, where
+    # the chart simply ignored it -- 18.x shipped no values schema, so a
+    # misplaced key was silently dropped rather than rejected. The result was
+    # that Loki exposed metrics on http-metrics:3100 that nothing scraped,
+    # and no ServiceMonitor existed for it in any namespace.
+    #
+    # Chart 20.x added a values schema, which is what turned the long-standing
+    # mistake into a CI failure:
+    #   additional properties 'serviceMonitor' not allowed
+    #
+    # So merging this starts scraping Loki for the first time. That is the
+    # intent of the line, but it is a new behaviour, not a restored one.
+    #
+    # Only serviceMonitor is enabled here. monitoring.dashboards, .rules,
+    # .alerts and .selfMonitoring all default to false and stay off -- they
+    # pull in extra resources nobody asked for.
+    monitoring:
+      serviceMonitor:
+        enabled: true
