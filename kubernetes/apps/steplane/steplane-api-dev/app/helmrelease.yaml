@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marknygaard/steplane-api
-              tag: sha-e7bf9bc
+              tag: sha-d711b2a
             # Two Secrets, deliberately. The database URLs come from
             # steplane-api-dev-db, created when the dev database was
             # provisioned; everything else from this app's own Secret. Keeping
