@@ -78,6 +78,29 @@
       allowedVersions: "<1.22.0",
     },
     {
+      // n8n 3.0.0 and 3.0.1 are both flagged prerelease on GitHub. The docs
+      // call 3.0.0 "early access", the stable tag still points at 2.45.7, and
+      // n8n has shipped four 2.4x releases since 3.0.1 -- including fixes to
+      // the v3 migration report itself.
+      //
+      // 3.0 is a one-way door. n8n runs forward-only schema migrations at
+      // startup (confirmed on this instance: CreateApps,
+      // CreateSelfHealingInvestigationTable and others ran on 2.46.3), so
+      // rollback is restore-from-dump, not a tag change. 3.0 also removes
+      // ~30 nodes, drops $getPairedItem, cuts N8N_RUNNERS_TASK_TIMEOUT from
+      // 300s to 60s, and requires a Slack signing secret or Slack Triggers
+      // silently fail to activate.
+      //
+      // Renovate reads Docker tags and cannot see GitHub's prerelease flag,
+      // so without this it keeps proposing the beta line. Pinning rather than
+      // ignoring, so 2.46.x patches still flow. Lift once 3.x is the stable
+      // tag and Settings > Migration Report on the live instance is clean.
+      description: "Pin n8n below 3.0.0 (3.x is prerelease; forward-only DB migrations)",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/n8nio/n8n/"],
+      allowedVersions: "<3.0.0",
+    },
+    {
       description: "Override Helmfile Dependency Name",
       matchDatasources: ["docker"],
       matchManagers: ["helmfile"],
