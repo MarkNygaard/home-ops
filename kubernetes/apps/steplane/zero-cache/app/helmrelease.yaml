@@ -28,6 +28,28 @@ spec:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
               ZERO_ENABLE_CRUD_MUTATIONS: "false"
+              # Rebuild the replica instead of crashlooping when replication
+              # halts. zero-cache keeps its own SQLite copy of the published
+              # tables and learns about upstream DDL through event triggers --
+              # which this cluster has none of, in either database, because
+              # creating them needs superuser and CNPG runs with
+              # enableSuperuserAccess: false. So an ALTER TABLE ADD COLUMN on a
+              # published table never reaches the replica, and the replicator
+              # aborts on the first row change that carries the new column:
+              #   Error: Unknown column <col> in table <table>  -> exit 255
+              #
+              # That is what took zero-cache-dev down on 2026-11-05, when a
+              # steplane-api migration added agents.kind to steplane_dev. The
+              # pod cannot recover by restarting -- the replica has already
+              # missed the column -- so it crashlooped until the replica volume
+              # and the stale replication slot were removed by hand.
+              #
+              # With this set, zero-cache wipes and re-syncs the replica itself
+              # in that situation. The cost is a full copy of the published
+              # tables and a short gap while it runs; the alternative is being
+              # down until someone notices. Production is only healthy today
+              # because agents.kind has not reached the steplane database yet.
+              ZERO_AUTO_RESET: "true"
               # Names the publication explicitly, because zero-cache cannot
               # create its own here. Left to itself it runs
               #   CREATE PUBLICATION _zero_public_0 FOR TABLES IN SCHEMA public

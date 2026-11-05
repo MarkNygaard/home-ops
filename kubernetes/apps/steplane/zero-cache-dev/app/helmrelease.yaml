@@ -29,6 +29,14 @@ spec:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
               ZERO_ENABLE_CRUD_MUTATIONS: "false"
+              # Rebuild the replica instead of crashlooping when replication
+              # halts -- see the long note in the production manifest. Short
+              # version: no DDL event triggers exist in either database (they
+              # need superuser, and CNPG runs enableSuperuserAccess: false), so
+              # an added column never reaches the SQLite replica and the
+              # replicator aborts on the first row change carrying it. This
+              # environment hit exactly that on 2026-11-05 with agents.kind.
+              ZERO_AUTO_RESET: "true"
               # This is what keeps the two instances apart. The app id is used
               # in schema and replication slot names, so dev gets its own
               # steplane_dev_0 schema and a steplane_dev_0_* slot, leaving
