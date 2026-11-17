@@ -13,6 +13,16 @@ spec:
       niles:
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          # Niles looks for its browser at the fixed name `niles-browser`
+          # (niles-browser/src/lib.rs: HOST). Upstream's Kustomize component
+          # points that name at the pod itself, and so does this: Chromium is
+          # a second container here, sharing the network namespace, so
+          # 127.0.0.1 is both of them. Nothing outside the pod can reach
+          # DevTools or the proxy, whatever the CNI enforces.
+          hostAliases:
+            - ip: 127.0.0.1
+              hostnames: ["niles-browser"]
         containers:
           app:
             image:
@@ -57,6 +67,81 @@ spec:
                 # state and its working set sits around 244Mi and rises with
                 # use rather than staying flat.
                 memory: 1Gi
+          # Chromium for Niles's browsing (0.9.0 adds watching it live and
+          # taking it over). Niles probes niles-browser:9222 at startup and
+          # turns browsing on by itself once it answers; there is nothing to
+          # set in the app's own config.
+          chromium:
+            image:
+              repository: docker.io/chromedp/headless-shell
+              tag: 158.0.8127.18@sha256:830fa77e0602cb42e5cb2cbd9237ba27b649ad69d5fb82b54713aac8b7ab4f29
+            # The bare binary, not the image's run.sh: that wraps Chromium in
+            # socat and would publish DevTools on the pod's address instead of
+            # loopback. Chromium itself binds 127.0.0.1 only.
+            command: ["/headless-shell/headless-shell"]
+            args:
+              # The container is the sandbox; it has no user namespaces.
+              - --no-sandbox
+              - --headless
+              - --remote-debugging-port=9222
+              - --user-data-dir=/tmp/chromium
+              - --window-size=1280,900
+              # Deny by default. Every browsing session is a fresh context
+              # that Niles creates over CDP with proxyServer set to its own
+              # proxy on 127.0.0.1:3128 (niles-browser/src/browser.rs), so
+              # these two flags only govern what Chromium does outside a
+              # session: port 9 is discard, and <-loopback> drops the implicit
+              # localhost bypass so even that goes nowhere.
+              - --proxy-server=http://127.0.0.1:9
+              - --proxy-bypass-list=<-loopback>
+              - --force-webrtc-ip-handling-policy=disable_non_proxied_udp
+              - --disable-quic
+              - --disable-background-networking
+              - --disable-component-update
+              - --disable-sync
+              - --disable-default-apps
+              - --disable-extensions
+              - --disable-domain-reliability
+              - --disable-client-side-phishing-detection
+              - --no-first-run
+              - --no-pings
+              - --use-gl=angle
+              - --use-angle=swiftshader
+            env:
+              # Away from /root, which readOnlyRootFilesystem makes unwritable.
+              HOME: /tmp
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 65534
+              runAsGroup: 65534
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+              seccompProfile: { type: RuntimeDefault }
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+            probes:
+              # No readiness or startup probe on purpose: a pod is ready only
+              # when every container is, so a browser slow to answer would take
+              # Niles out of its Service. A stuck one is restarted instead.
+              # Note the converse still holds — while Chromium restarts, the
+              # pod is briefly not ready, which upstream documents too.
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: [bash, -c, "exec 3<>/dev/tcp/127.0.0.1/9222"]
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -100,8 +185,44 @@ spec:
       # mount at /etc/niles/niles.toml is gone. Leaving the mount behind would
       # fail the pod outright rather than degrade: a configMap volume naming a
       # ConfigMap that does not exist blocks container creation.
+      #
+      # advancedMounts, not globalMounts: with two containers a global mount
+      # would put this same volume at /tmp in Chromium as well, on top of the
+      # browser's own. Niles's /tmp is its own.
       tmp:
         type: emptyDir
+        advancedMounts:
+          niles:
+            app:
+              - path: /tmp
+      # Chromium's writable space: --user-data-dir and HOME both live here,
+      # and the root filesystem is read-only.
+      browser-tmp:
+        type: emptyDir
+        sizeLimit: 1Gi
+        advancedMounts:
+          niles:
+            chromium:
+              - path: /tmp
+      # Chromium crashes rendering pages on the default 64Mi /dev/shm.
+      browser-shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 512Mi
+        advancedMounts:
+          niles:
+            chromium:
+              - path: /dev/shm
+      # Keeps the pod's service-account token out of the browser: Kubernetes
+      # adds no token where a mount already sits.
+      browser-no-token:
+        type: emptyDir
+        sizeLimit: 1Mi
+        advancedMounts:
+          niles:
+            chromium:
+              - path: /var/run/secrets/kubernetes.io/serviceaccount
+                readOnly: true
     route:
       app:
         annotations:
