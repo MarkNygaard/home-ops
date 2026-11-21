@@ -74,7 +74,7 @@ spec:
           chromium:
             image:
               repository: docker.io/chromedp/headless-shell
-              tag: 158.0.8127.18@sha256:830fa77e0602cb42e5cb2cbd9237ba27b649ad69d5fb82b54713aac8b7ab4f29
+              tag: 158.0.8127.37@sha256:8c574e39f0db5c1d9efe7c472c6e0fcfc1d91ac0be70eb1dead0f2d52cf104cc
             # The bare binary, not the image's run.sh: that wraps Chromium in
             # socat and would publish DevTools on the pod's address instead of
             # loopback. Chromium itself binds 127.0.0.1 only.
