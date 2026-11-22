@@ -118,11 +118,15 @@
       // packages/db/README.md ("Upgrading zero-cache") in the steplane repo.
       // Each environment is upgraded by hand in its own PR, dev first.
       // Lift this once production is on 1.12; until then it also holds
-      // zero-cache-dev at whatever 1.12.x it was set to by hand.
-      description: "Pin rocicorp/zero below 1.12 (upgrade needs DDL detection toggled; manual, dev first)",
+      // zero-cache-dev at whatever version it was set to by hand.
+      //
+      // Tightened from "<1.12" to "<1.11.5" after 1.11.6 (#1566, auto-merged)
+      // turned out to ship the same v30 -> v32 shard migration and took
+      // production down again the same way. A patch bump is not safe here.
+      description: "Pin rocicorp/zero below 1.11.5 (1.11.6+/1.12 migrate to v32: upgrade needs DDL detection toggled; manual, dev first)",
       matchDatasources: ["docker"],
       matchPackageNames: ["docker.io/rocicorp/zero"],
-      allowedVersions: "<1.12",
+      allowedVersions: "<1.11.5",
     },
     {
       description: "Override Helmfile Dependency Name",
