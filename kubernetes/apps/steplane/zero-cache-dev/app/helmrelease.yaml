@@ -24,7 +24,7 @@ spec:
               # Same version as production, deliberately. A development
               # environment that runs a different Zero than production tests
               # the wrong thing.
-              tag: 1.11.4
+              tag: 1.12.0
             env:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
