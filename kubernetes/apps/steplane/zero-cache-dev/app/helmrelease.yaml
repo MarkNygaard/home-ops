@@ -23,8 +23,18 @@ spec:
               repository: docker.io/rocicorp/zero
               # Same version as production, deliberately. A development
               # environment that runs a different Zero than production tests
-              # the wrong thing.
-              tag: 1.11.6
+              # the wrong thing. The exception is a Zero upgrade, which lands
+              # here first and in production in a separate PR.
+              #
+              # Upgrades are not a tag bump. They follow packages/db/README.md
+              # ("Upgrading zero-cache") in the steplane repo: switch DDL
+              # detection off (db:grant-zero --before-upgrade), deploy, wait for
+              # "Proceeding in degraded mode" and "Upgraded DDL event triggers"
+              # in the log, switch detection back on (db:grant-zero), restart.
+              # Skipping the first step crashloops on "permission denied to
+              # create event trigger" (#1514, reverted in #1565; again by 1.11.6
+              # in #1566). Renovate is pinned below 1.11.5 for this reason.
+              tag: 1.12.0
             env:
               TZ: Europe/Copenhagen
               ZERO_REPLICA_FILE: /data/replica.db
@@ -57,6 +67,18 @@ spec:
               # Four, as in production: the default is max(1, cores - 1),
               # which is 13-14 on these nodes and idles at ~1 GB.
               ZERO_NUM_SYNC_WORKERS: "4"
+              # 1.12 turns this on by default: each replication-manager keeps
+              # its own slot and forks from a Litestream backup, which this
+              # cluster does not have. Off keeps 1.11's single-slot behaviour;
+              # per the 1.12 notes, turning it off needs no resync.
+              ZERO_UPSTREAM_PG_REPLICATION_SLOT_PER_REPLICA: "false"
+              # steplane-api-dev already returns the validated userID from
+              # /query and /mutate. Without this, zero-cache trusts the userID
+              # the client claims (1.12 security fix, off by default).
+              ZERO_AUTH_REQUIRE_SERVER_USER_ID: "true"
+              # Hardening: /heapz serves heap snapshots, which can contain
+              # tokens and cookies, to anyone holding the admin password.
+              ZERO_ENABLE_HEAPZ: "false"
             # ZERO_UPSTREAM_DB, ZERO_ADMIN_PASSWORD and the two X-Api-Key
             # values come from here. The API keys match steplane-api-dev
             # exactly; change one and you must change the other.
