@@ -101,32 +101,36 @@
       allowedVersions: "<3.0.0",
     },
     {
-      // zero 1.12.0 migrates its shard schema v30 -> v32 on startup, and v32
+      // Any rocicorp/zero bump may run a shard schema migration that
       // reinstalls the DDL event triggers. Creating an event trigger needs
       // superuser, which the steplane role does not have (CNPG runs
-      // enableSuperuserAccess: false by design). With Steplane's DDL
-      // detection on, that permission error is fatal:
+      // enableSuperuserAccess: false by design), and with Steplane's DDL
+      // detection on that is fatal:
       //
       //   permission denied to create event trigger "zero_ddl_start_0"
       //
-      // Both zero-cache and zero-cache-dev crashlooped on it on 2026-11-22
-      // (#1514, reverted in #1565). Steplane sync was down for ~15 minutes,
-      // because the Recreate strategy had already removed the 1.11.4 pods.
+      // 1.12.0 (#1514) and then the patch release 1.11.6 (#1566) both
+      // shipped the v30 -> v32 migration and both took Steplane sync down
+      // (reverted in #1565, #1570). The version number does not tell you
+      // whether a release migrates, so no zero bump is safe to merge blind.
       //
-      // 1.12 is not an automatic bump: DDL detection has to be switched off
-      // in the database first, then back on after zero-cache comes up. See
-      // packages/db/README.md ("Upgrading zero-cache") in the steplane repo.
-      // Each environment is upgraded by hand in its own PR, dev first.
-      // Lift this once production is on 1.12; until then it also holds
-      // zero-cache-dev at whatever version it was set to by hand.
+      // Every bump follows packages/db/README.md ("Upgrading zero-cache") in
+      // the steplane repo, dev first, each environment in its own PR:
+      // DDL detection off (db:grant-zero --before-upgrade) -> deploy ->
+      // one expected resync (MissingEventTriggerSupport, auto-reset) ->
+      // detection back on (db:grant-zero) -> restart.
       //
-      // Tightened from "<1.12" to "<1.11.5" after 1.11.6 (#1566, auto-merged)
-      // turned out to ship the same v30 -> v32 shard migration and took
-      // production down again the same way. A patch bump is not safe here.
-      description: "Pin rocicorp/zero below 1.11.5 (1.11.6+/1.12 migrate to v32: upgrade needs DDL detection toggled; manual, dev first)",
+      // So: versions are allowed again (the <1.11.5 pin was lifted once
+      // production reached 1.12.0, #1571), but a PR is only opened after
+      // approval on the Renovate Dashboard, Renovate never automerges it,
+      // and the manual-upgrade label tells home-ops-agent not to either
+      // (#1566 was merged by the agent, not by Renovate).
+      description: "rocicorp/zero: dashboard approval, never automerge (bumps may run a shard migration; manual upgrade procedure, dev first)",
       matchDatasources: ["docker"],
       matchPackageNames: ["docker.io/rocicorp/zero"],
-      allowedVersions: "<1.11.5",
+      dependencyDashboardApproval: true,
+      automerge: false,
+      addLabels: ["manual-upgrade"],
     },
     {
       description: "Override Helmfile Dependency Name",
