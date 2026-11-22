@@ -101,6 +101,30 @@
       allowedVersions: "<3.0.0",
     },
     {
+      // zero 1.12.0 migrates its shard schema v30 -> v32 on startup, and v32
+      // reinstalls the DDL event triggers. Creating an event trigger needs
+      // superuser, which the steplane role does not have (CNPG runs
+      // enableSuperuserAccess: false by design). With Steplane's DDL
+      // detection on, that permission error is fatal:
+      //
+      //   permission denied to create event trigger "zero_ddl_start_0"
+      //
+      // Both zero-cache and zero-cache-dev crashlooped on it on 2026-11-22
+      // (#1514, reverted in #1565). Steplane sync was down for ~15 minutes,
+      // because the Recreate strategy had already removed the 1.11.4 pods.
+      //
+      // 1.12 is not an automatic bump: DDL detection has to be switched off
+      // in the database first, then back on after zero-cache comes up. See
+      // packages/db/README.md ("Upgrading zero-cache") in the steplane repo.
+      // Each environment is upgraded by hand in its own PR, dev first.
+      // Lift this once production is on 1.12; until then it also holds
+      // zero-cache-dev at whatever 1.12.x it was set to by hand.
+      description: "Pin rocicorp/zero below 1.12 (upgrade needs DDL detection toggled; manual, dev first)",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["docker.io/rocicorp/zero"],
+      allowedVersions: "<1.12",
+    },
+    {
       description: "Override Helmfile Dependency Name",
       matchDatasources: ["docker"],
       matchManagers: ["helmfile"],
