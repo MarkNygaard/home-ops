@@ -1,14 +1,9 @@
+# Talos 1.14 moved the Kubernetes component settings out of the v1alpha1
+# `cluster:` block into their own documents, and refuses a config that sets
+# them in both places. Only what still lives in v1alpha1 stays in this first
+# document.
 cluster:
   allowSchedulingOnControlPlanes: true
-  apiServer:
-    admissionControl:
-      $$patch: delete
-    extraArgs:
-      # https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/
-      enable-aggregator-routing: true
-  controllerManager:
-    extraArgs:
-      bind-address: 0.0.0.0
   coreDNS:
     disabled: true
   etcd:
@@ -16,8 +11,42 @@ cluster:
       listen-metrics-urls: http://0.0.0.0:2381
     advertisedSubnets:
       - 192.168.42.0/24
-  proxy:
-    disabled: true
-  scheduler:
-    extraArgs:
-      bind-address: 0.0.0.0
+---
+# Was `cluster.apiServer.admissionControl: $patch: delete`. Generated
+# configs add the PodSecurity admission plugin as its own document now.
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+$$patch: delete
+---
+# Generated configs now restrict anonymous API access to /livez, /readyz and
+# /healthz. The cluster has always run with the Kubernetes default, so this
+# keeps it that way. Removing this delete is a hardening change of its own.
+apiVersion: v1alpha1
+kind: KubeAuthenticationConfig
+$$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+extraArgs:
+  # https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/
+  enable-aggregator-routing: "true"
+# talhelper's additionalApiServerCertSans no longer reaches the apiserver
+# certificate in the 1.14 format, only the machine one, so it is repeated here.
+certExtraSANs:
+  - 127.0.0.1
+  - 192.168.42.10
+---
+apiVersion: v1alpha1
+kind: KubeControllerManagerConfig
+extraArgs:
+  bind-address: 0.0.0.0
+---
+apiVersion: v1alpha1
+kind: KubeSchedulerConfig
+extraArgs:
+  bind-address: 0.0.0.0
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false

@@ -16,6 +16,11 @@ tasks:
   apply-node:
     desc: Apply Talos config to a node [IP=required]
     dir: '{{.TALOS_DIR}}'
+    # Regenerate first. clusterconfig/ is gitignored and only changes when
+    # genconfig runs, so without this the task applies whatever was generated
+    # last -- which once meant March files that would have downgraded Talos
+    # and Kubernetes. If genconfig fails, the task stops here.
+    deps: [generate-config]
     cmd: talhelper gencommand apply --node {{.IP}} --extra-flags '--mode={{.MODE}}' | bash
     vars:
       MODE: '{{.MODE | default "auto"}}'

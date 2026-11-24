@@ -1,6 +1,9 @@
-machine:
-  network:
-    disableSearchDomain: true
-    nameservers:
-      - 1.1.1.1
-      - 1.0.0.1
+# Was `machine.network.nameservers` and `disableSearchDomain` in v1alpha1.
+# Talos 1.14 generates a ResolverConfig document and rejects both together.
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 1.1.1.1
+  - address: 1.0.0.1
+searchDomains:
+  disableDefault: true
