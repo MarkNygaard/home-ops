@@ -2,6 +2,12 @@ machine:
   kubelet:
     extraConfig:
       serializeImagePulls: false
+      # Remove images no container has used for 7 days, however full the
+      # disk is. Without this kubelet only collects images above 85% disk
+      # use, and k8s-0 sat at 72% with ~650 unused images (290 GB in
+      # containerd), mostly old ai-harness and niles builds. Rolling back to
+      # an image older than this just pulls it again.
+      imageMaximumGCAge: 168h
     extraMounts:
       - destination: /var/local-path-provisioner
         type: bind
