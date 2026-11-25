@@ -1,0 +1,38 @@
+---
+name: "Talos"
+
+# Flux Local only looks at kubernetes/**, so before this a Talos change merged
+# with no check at all. That is how `talhelper genconfig` stayed broken from
+# the Talos 1.14 upgrade (#925) until #1581.
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - talos/**
+      - .mise.toml
+      - .github/workflows/talos.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Talos Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The same talhelper and talosctl versions as the devbox, from .mise.toml,
+      # so a Renovate bump of either is tested here too.
+      - name: Install talhelper and talosctl
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          install_args: aqua:budimanjojo/talhelper aqua:siderolabs/talos
+
+      - name: Generate and validate
+        run: ./scripts/talos-validate.sh
