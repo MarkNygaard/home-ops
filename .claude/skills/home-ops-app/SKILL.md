@@ -34,7 +34,6 @@ Namespaces and their purpose:
 - `media` — media stack (Jellyfin, *arr apps, qBittorrent)
 - `automation` — workflow tools (n8n, Crawl4AI)
 - `storage` — storage operators (Volsync)
-- `security` — identity/auth (Authentik)
 - `productivity` — general tools (Excalidraw)
 
 ## Port note
@@ -53,7 +52,7 @@ Check `references/app-catalog.md` for the app name. If found, present all pre-fi
 - **PVC**: does it store state that must survive pod restarts? If yes, how much capacity (default: `5Gi`).
 - **Volsync**: should the PVC be backed up to Cloudflare R2? Only for non-rebuildable state (user config, watch history, SSO data). Skip for rebuildable data (media files, embeddings, cached thumbnails).
 - **SOPS secrets**: does it need API keys, passwords, or tokens as env vars? List the variable names.
-- **dependsOn**: does it require another Kustomization to be ready first? (e.g., `cloudnativepg` for DB apps, `authentik` for SSO-protected apps)
+- **dependsOn**: does it require another Kustomization to be ready first? (e.g., `cloudnativepg` for DB apps)
 
 ### Step 2 — Check namespace directory
 

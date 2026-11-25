@@ -162,7 +162,7 @@ spec:
             # Granting the steplane role SUPERUSER would remove both problems
             # and is the wrong trade: superuser is cluster-wide, not
             # database-scoped, so it would also hand Steplane full access to
-            # Authentik, n8n and every other database on this cluster.
+            # n8n and every other database on this cluster.
             envFrom:
               - secretRef:
                   name: zero-cache-env

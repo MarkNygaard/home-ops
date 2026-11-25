@@ -180,15 +180,6 @@ spec:
                 interval: 5m
                 conditions:
                   - "[DNS_RCODE] == NOERROR"
-              - name: authentik
-                group: external dns
-                url: "1.1.1.1"
-                dns:
-                  query-name: "auth.${SECRET_DOMAIN}"
-                  query-type: "A"
-                interval: 5m
-                conditions:
-                  - "[DNS_RCODE] == NOERROR"
               # Deliberately a different resolver, so a Cloudflare DNS incident
               # is distinguishable from our records actually being gone.
               - name: ntfy

@@ -11,8 +11,8 @@ spec:
   login: true
   inherit: true
   # Owning its own database is the whole grant. Nothing beyond it: a role that
-  # holds light switches has no business being able to reach authentik, the
-  # harness database or the registry, and CREATEDB/CREATEROLE would be a route
+  # holds light switches has no business being able to reach the harness
+  # database or the registry, and CREATEDB/CREATEROLE would be a route
   # out of its own database rather than a capability it needs. Owning the
   # database already covers CREATE TABLE, which is the only privilege niles
   # actually asked for.

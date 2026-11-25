@@ -12,7 +12,7 @@ spec:
   inherit: true
   # This role is reachable from outside the cluster, so it gets nothing beyond
   # its own database: no superuser, no CREATEDB, no CREATEROLE. A leaked
-  # registry password must not become a route to authentik or the harness DB.
+  # registry password must not become a route to the other databases.
   superuser: false
   createdb: false
   createrole: false

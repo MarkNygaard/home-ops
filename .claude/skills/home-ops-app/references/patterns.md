@@ -45,7 +45,6 @@ The namespace must be the **actual namespace** of the referenced Kustomization (
 Common dependsOn values:
 - `cloudnativepg-cluster` (namespace: `database`) — apps that need PostgreSQL
 - `redis` (namespace: `database`) — apps that need Redis/Valkey
-- `authentik` (namespace: `security`) — apps protected by SSO
 - `cert-manager` (namespace: `cert-manager`) — apps needing TLS certs
 - `intel-gpu-resource-driver` (namespace: `kube-system`) — Jellyfin and other GPU apps
 

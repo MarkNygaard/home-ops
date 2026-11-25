@@ -70,7 +70,6 @@ Built from the [onedr0p/cluster-template](https://github.com/onedr0p/cluster-tem
 |                | unifi-dns             | DNS record sync (UniFi)                          |
 |                | k8s-gateway           | Internal cluster DNS                             |
 |                | Envoy Gateway         | Ingress controller                               |
-| **security**   | Authentik             | SSO & identity provider                          |
 | **database**   | CloudNativePG         | PostgreSQL operator + cluster                    |
 |                | Valkey                | Redis-compatible cache                           |
 | **storage**    | Volsync               | PVC backup to R2                                 |
