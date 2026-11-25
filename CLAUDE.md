@@ -71,14 +71,14 @@ TB4 cables must be connected **before** first boot so interfaces are present at 
 - **DNS:** AdGuard Home (LB .14) + k8s-gateway (LB .11) + external-dns + Cloudflare Tunnel (cloudflared)
 - **TLS:** cert-manager (included in template)
 - **Secrets:** SOPS with age encryption
-- **Backup:** Volsync → Cloudflare R2 (`cluster-volsync` bucket) for Authentik, Radarr, Sonarr, Prowlarr
+- **Backup:** Volsync → Cloudflare R2 (`cluster-volsync` bucket) for Radarr, Sonarr, Prowlarr
   - Qdrant and Jellyfin are **excluded** from Volsync (rebuildable, can grow large)
 - **Database:** CloudNativePG (pgvecto.rs image: `ghcr.io/tensorchord/cloudnative-pgvecto.rs:16`) + Valkey (ephemeral Redis-compatible cache)
   - Backups: barman-cloud **plugin** → `s3://cluster-volsync/postgres` in R2, continuous WAL archiving + nightly base backup at 02:30, 30-day retention.
     Not `spec.backup.barmanObjectStore` — that field is removed in CNPG 1.31.
     The recovery window lives on the `ObjectStore` status, not the Cluster's `lastSuccessfulBackup`, which stays empty with the plugin.
-  - This replaced "no WAL archiving (rebuildable)". That was true when the database held nothing; it now holds Authentik SSO, n8n and the harness registry.
-- **Identity/SSO:** Authentik with forward auth on Envoy Gateway HTTPRoutes
+  - This replaced "no WAL archiving (rebuildable)". That was true when the database held nothing; it now holds n8n, the harness registry and the Steplane databases.
+- **Identity/SSO:** none. Authentik was deployed but never configured, and removed on 2026-11-25.
 
 ## Storage phases
 
@@ -120,7 +120,7 @@ The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** fo
 
 ## Current deployment phase
 
-**Phases 1–9 largely complete.** Remaining work: Phase 5 SSO configuration (Authentik providers/forward auth), Phase 7 Authentik Volsync backup, Phase 10 (Automation & AI), Phase 11 (Productivity). See [DEPLOYMENT.md](DEPLOYMENT.md) for the full checklist.
+**Phases 1–9 largely complete.** Remaining work: Phase 10 (Automation & AI), Phase 11 (Productivity). See [DEPLOYMENT.md](DEPLOYMENT.md) for the full checklist.
 
 ### What's deployed
 - Talos v1.12.4, Kubernetes v1.35.2, 3 control-plane+worker nodes
@@ -129,7 +129,6 @@ The developer runs on **Windows 11**. Use **WSL2 (Ubuntu) via Warp terminal** fo
 - AdGuard Home (DNS) + k8s-gateway + cloudflared + external-dns + unifi-dns
 - local-path-provisioner (StorageClass)
 - CloudNativePG (PostgreSQL 16 + pgvecto.rs) + Valkey (Redis)
-- Authentik (SSO) — server + worker running
 - kube-prometheus-stack (Prometheus + Alertmanager) + Grafana (operator) + Loki + Alloy
 - ntfy + Gatus + smartctl-exporter + unpoller + flux-webui
 - Volsync (backup to R2) — radarr, sonarr, prowlarr configured

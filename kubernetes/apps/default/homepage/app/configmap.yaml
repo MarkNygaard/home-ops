@@ -171,10 +171,6 @@ data:
             href: https://search.mnygaard.io
             description: Privacy-respecting metasearch
     - Infrastructure:
-        - Authentik:
-            icon: authentik.svg
-            href: https://auth.mnygaard.io
-            description: Identity and SSO
         - AdGuard Home:
             icon: adguard-home.svg
             href: https://adguard.mnygaard.io

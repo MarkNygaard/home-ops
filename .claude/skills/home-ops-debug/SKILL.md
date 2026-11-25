@@ -54,7 +54,6 @@ Use the namespace mapping from the app skill:
 - `monitoring` — alloy, gatus, grafana, kube-prometheus-stack, loki, ntfy, ntfy-alertmanager, smartctl-exporter, unpoller
 - `database` — cloudnativepg, redis
 - `media` — bazarr, flaresolverr, jellyfin, prowlarr, qbittorrent, radarr, recyclarr, seerr, sonarr
-- `security` — authentik
 - `storage` — volsync
 
 ### Step 2 — Flux GitOps layer
