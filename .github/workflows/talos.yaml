@@ -30,7 +30,7 @@ jobs:
       # The same talhelper and talosctl versions as the devbox, from .mise.toml,
       # so a Renovate bump of either is tested here too.
       - name: Install talhelper and talosctl
-        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           install_args: aqua:budimanjojo/talhelper aqua:siderolabs/talos
 
