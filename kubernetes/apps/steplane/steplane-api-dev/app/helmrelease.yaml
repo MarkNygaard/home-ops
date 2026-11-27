@@ -8,6 +8,10 @@ spec:
     kind: OCIRepository
     name: steplane-api-dev
   interval: 1h
+  # The image is ~300 MB and pulling it from GHCR has taken 6m43s on a node
+  # without it cached (2026-11-27). The default 5m timeout then fails the
+  # upgrade and rolls back a pod that was about to start healthy.
+  timeout: 10m
   values:
     controllers:
       steplane-api-dev:
